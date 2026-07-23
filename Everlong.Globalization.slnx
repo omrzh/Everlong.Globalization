@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Everlong.Globalization/Everlong.Globalization.csproj" />
+    <Project Path="src/Everlong.Globalization.Tools/Everlong.Globalization.Tools.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Everlong.Globalization.Tests/Everlong.Globalization.Tests.csproj" />
+    <Project Path="tests/Everlong.Globalization.Tools.Tests/Everlong.Globalization.Tools.Tests.csproj" />
+  </Folder>
+  <Folder Name="/SolutionItems/">
+    <File Path="EverlongGlobalizationVersion.props" />
+    <File Path="README.md" />
+    <File Path="LICENSE" />
+    <File Path=".gitignore" />
+    <File Path=".gitattributes" />
+  </Folder>
+</Solution>

@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build
+        run: dotnet build Everlong.Globalization.slnx --nologo
+
+      - name: Test
+        run: |
+          dotnet test tests/Everlong.Globalization.Tests/Everlong.Globalization.Tests.csproj --no-build --nologo
+          dotnet test tests/Everlong.Globalization.Tools.Tests/Everlong.Globalization.Tools.Tests.csproj --no-build --nologo

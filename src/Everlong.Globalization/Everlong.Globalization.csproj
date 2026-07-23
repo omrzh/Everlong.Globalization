@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\EverlongGlobalizationVersion.props"/>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <RootNamespace>Everlong.Globalization</RootNamespace>
+    <PackageId>Everlong.Globalization</PackageId>
+    <Authors>Richard Zheng</Authors>
+    <Copyright>Copyright © 2026 Everlong Technology</Copyright>
+    <Company>Everlong Technology</Company>
+    <Description>Everlong Globalization — locale switching, string providers, ICU MessageFormat formatter, and code-gen base types.</Description>
+    <PackageTags>Globalization;Localization;i18n;ICU;MessageFormat</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' != 'Debug'">true</GeneratePackageOnBuild>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/omrzh/Everlong.Globalization</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/omrzh/Everlong.Globalization</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <!-- Zero external dependencies — pure BCL types only -->
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\"/>
+    <None Include="readme.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+</Project>

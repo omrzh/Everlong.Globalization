@@ -1,0 +1,54 @@
+name: release
+
+# Triggered by a semver tag, e.g. `git tag v0.1.0 && git push origin v0.1.0`.
+# Package versions are read from EverlongGlobalizationVersion.props — keep the
+# tag in sync with GlobalizationVersion.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write   # REQUIRED: lets GitHub issue the OIDC token for NuGet.org trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production   # must match the Environment in the nuget.org trust policy
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build (Release)
+        run: dotnet build Everlong.Globalization.slnx -c Release --nologo
+
+      - name: Test (Release)
+        run: |
+          dotnet test tests/Everlong.Globalization.Tests/Everlong.Globalization.Tests.csproj -c Release --no-build --nologo
+          dotnet test tests/Everlong.Globalization.Tools.Tests/Everlong.Globalization.Tools.Tests.csproj -c Release --no-build --nologo
+
+      - name: Pack
+        run: |
+          dotnet pack src/Everlong.Globalization -c Release --no-build -o artifacts --nologo
+          dotnet pack src/Everlong.Globalization.Tools -c Release --no-build -o artifacts --nologo
+
+      - name: NuGet login (OIDC → short-lived API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          # The nuget.org account that CREATED the trust policy (not the package
+          # owner). Public info, not a credential. Comes from the repo Actions
+          # VARIABLE NUGET_USER (Settings → Secrets and variables → Variables).
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to NuGet.org
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
