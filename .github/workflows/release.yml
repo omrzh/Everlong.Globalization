@@ -1,8 +1,15 @@
 name: release
 
-# Triggered by a semver tag, e.g. `git tag v0.1.0 && git push origin v0.1.0`.
-# Package versions are read from EverlongGlobalizationVersion.props — keep the
-# tag in sync with GlobalizationVersion.
+# Triggered by a semver tag, e.g. `git tag v0.2.0 && git push origin v0.2.0`.
+# Package versions are read from EverlongGlobalizationVersion.props — the tag
+# MUST exactly match GlobalizationVersion (`v0.2.0` ↔ `0.2.0`).
+#
+# Branch policy (enforced in the "Verify" step):
+#   stable version (no `-` suffix)  → tag must point to a commit on master
+#   prerelease version (e.g. `0.2.0-preview.1`) → may point to ANY branch
+# (prerelease packages need `--prerelease` to install, so they never pollute
+# stable consumers — that is the escape hatch for publishing from experiment
+# branches.)
 on:
   push:
     tags: ['v*']
@@ -17,12 +24,30 @@ jobs:
     environment: production   # must match the Environment in the nuget.org trust policy
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history: needed for the merge-base check below
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             8.0.x
             10.0.x
+
+      - name: Verify tag ↔ props sync & branch policy
+        run: |
+          V=$(sed -n 's/.*<GlobalizationVersion>\([^<]*\)<\/GlobalizationVersion>.*/\1/p' EverlongGlobalizationVersion.props)
+          [ -n "$V" ] || { echo "GlobalizationVersion not found in props"; exit 1; }
+          [ "$GITHUB_REF_NAME" = "v$V" ] || { echo "tag '$GITHUB_REF_NAME' does not match props 'v$V'"; exit 1; }
+          case "$V" in
+            *-*)
+              echo "Prerelease $V — allowed from any branch"
+              ;;
+            *)
+              git merge-base --is-ancestor "$GITHUB_SHA" origin/master \
+                || { echo "Stable release must point to a commit on master"; exit 1; }
+              echo "Stable $V on master — OK"
+              ;;
+          esac
 
       - name: Build (Release)
         run: dotnet build Everlong.Globalization.slnx -c Release --nologo
