@@ -8,7 +8,8 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
   {
     var singleProjectMode = !string.IsNullOrWhiteSpace(projectOverride);
     var csprojPaths = ResolveCsprojPaths(projectOverride);
-    if (csprojPaths.Count == 0) return;
+    if (csprojPaths.Count == 0)
+      return;
 
     foreach (var csprojPath in csprojPaths)
     {
@@ -112,7 +113,8 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
 
     var cwd = Directory.GetCurrentDirectory();
     var located = locator.FindAllCsprojWithElg(cwd);
-    if (located.Count > 0) return located;
+    if (located.Count > 0)
+      return located;
 
     if (locator.FindCsproj(cwd) is null)
       Console.WriteLine($"No .csproj file found walking down from: {cwd}");
@@ -157,7 +159,8 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
       foreach (var localeDir in localeDirs)
       {
         var locale = Path.GetFileName(localeDir)!;
-        if (locale == config.DefaultLocale) continue;
+        if (locale == config.DefaultLocale)
+          continue;
 
         var nameWithoutExt = Path.GetFileNameWithoutExtension(moduleFile)!;
         var localeFile = new[] { ".json", ".jsonc" }
@@ -190,12 +193,14 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
     foreach (var localeDir in localeDirs)
     {
       var locale = Path.GetFileName(localeDir)!;
-      if (locale == config.DefaultLocale) continue;
+      if (locale == config.DefaultLocale)
+        continue;
 
       foreach (var extraFile in Directory.GetFiles(localeDir, "*.json")
                  .Concat(Directory.GetFiles(localeDir, "*.jsonc")))
       {
-        if (neutralBaseNames.Contains(Path.GetFileNameWithoutExtension(extraFile)!)) continue;
+        if (neutralBaseNames.Contains(Path.GetFileNameWithoutExtension(extraFile)!))
+          continue;
 
         var extraFileData = reader.ReadWithMeta(File.ReadAllText(extraFile));
         var extraModuleName = ToModuleName(Path.GetFileNameWithoutExtension(extraFile)!);
@@ -218,13 +223,15 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
   private static IReadOnlyDictionary<string, string> PrefixKeys(
     IReadOnlyDictionary<string, string> flat, string prefix)
   {
-    if (string.IsNullOrEmpty(prefix)) return flat;
+    if (string.IsNullOrEmpty(prefix))
+      return flat;
     return flat.ToDictionary(kvp => $"{prefix}.{kvp.Key}", kvp => kvp.Value);
   }
 
   private static string ToModuleName(string filename)
   {
-    if (string.IsNullOrEmpty(filename)) return "Default";
+    if (string.IsNullOrEmpty(filename))
+      return "Default";
     var parts = filename.Split(['-', '_'], StringSplitOptions.RemoveEmptyEntries);
     return string.Concat(parts.Select(p => p.Length > 0 ? char.ToUpperInvariant(p[0]) + p[1..] : p));
   }
@@ -234,12 +241,14 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
     string className,
     IReadOnlySet<string> outputPaths)
   {
-    if (!Directory.Exists(outputDir)) return;
+    if (!Directory.Exists(outputDir))
+      return;
 
     var filePattern = $"{className}.*.g.cs";
     foreach (var candidate in Directory.GetFiles(outputDir, filePattern, SearchOption.TopDirectoryOnly))
     {
-      if (outputPaths.Contains(candidate)) continue;
+      if (outputPaths.Contains(candidate))
+        continue;
 
       var attrs = File.GetAttributes(candidate);
       if (attrs.HasFlag(FileAttributes.ReadOnly))

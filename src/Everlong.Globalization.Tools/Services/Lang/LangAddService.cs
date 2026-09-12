@@ -7,7 +7,8 @@ public class LangAddService(CsprojLocator locator)
   public async Task RunAsync(string locale, string? projectOverride, bool force, CancellationToken ct = default)
   {
     var csprojPath = ResolveCsproj(projectOverride);
-    if (csprojPath is null) return;
+    if (csprojPath is null)
+      return;
 
     var config = locator.ReadConfig(csprojPath);
     await AddFolderAsync(locale, config, force, ct);
@@ -35,7 +36,8 @@ public class LangAddService(CsprojLocator locator)
 
     var cwd = Directory.GetCurrentDirectory();
     var located = locator.FindCsprojWithElg(cwd);
-    if (located is not null) return located;
+    if (located is not null)
+      return located;
 
     if (locator.FindCsproj(cwd) is null)
       Console.WriteLine($"No .csproj file found walking down from: {cwd}");

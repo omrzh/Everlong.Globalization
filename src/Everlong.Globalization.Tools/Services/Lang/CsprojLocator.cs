@@ -201,7 +201,8 @@ public class CsprojLocator
       var value = xml.Descendants("PropertyGroup")
         .Elements("SatelliteResourceLanguages")
         .FirstOrDefault()?.Value?.Trim();
-      if (string.IsNullOrEmpty(value)) return [];
+      if (string.IsNullOrEmpty(value))
+        return [];
       return value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                   .ToList();
     }
@@ -218,7 +219,8 @@ public class CsprojLocator
 
   internal static I18nFileConfig ReadI18nFileConfig(string path)
   {
-    if (!File.Exists(path)) return new I18nFileConfig();
+    if (!File.Exists(path))
+      return new I18nFileConfig();
     using var doc = JsonDocument.Parse(File.ReadAllText(path), JsoncOptions);
     var root = doc.RootElement;
 
@@ -233,23 +235,32 @@ public class CsprojLocator
 
     if (root.TryGetProperty("locale", out var localeGroup) && localeGroup.ValueKind == JsonValueKind.Object)
     {
-      if (localeGroup.TryGetProperty("default", out var lgDefault)) defaultLocale = lgDefault.GetString();
-      if (localeGroup.TryGetProperty("sourceDir", out var lgSourceDir)) sourceDir = lgSourceDir.GetString();
+      if (localeGroup.TryGetProperty("default", out var lgDefault))
+        defaultLocale = lgDefault.GetString();
+      if (localeGroup.TryGetProperty("sourceDir", out var lgSourceDir))
+        sourceDir = lgSourceDir.GetString();
     }
 
     if (root.TryGetProperty("output", out var outputGroup) && outputGroup.ValueKind == JsonValueKind.Object)
     {
-      if (outputGroup.TryGetProperty("dir", out var ogDir)) outputDir = ogDir.GetString();
-      if (outputGroup.TryGetProperty("namespace", out var ogNs)) ns = ogNs.GetString();
-      if (outputGroup.TryGetProperty("className", out var ogCn)) className = ogCn.GetString();
+      if (outputGroup.TryGetProperty("dir", out var ogDir))
+        outputDir = ogDir.GetString();
+      if (outputGroup.TryGetProperty("namespace", out var ogNs))
+        ns = ogNs.GetString();
+      if (outputGroup.TryGetProperty("className", out var ogCn))
+        className = ogCn.GetString();
     }
 
     if (root.TryGetProperty("types", out var typesGroup) && typesGroup.ValueKind == JsonValueKind.Object)
     {
-      if (typesGroup.TryGetProperty("classVisibility", out var tgCv)) classVisibility = tgCv.GetString();
-      if (typesGroup.TryGetProperty("memberVisibility", out var tgMv)) memberVisibility = tgMv.GetString();
-      if (typesGroup.TryGetProperty("localesVisibility", out var tgLv)) localesVisibility = tgLv.GetString();
-      if (typesGroup.TryGetProperty("suffix", out var tgSuffix)) sectionTypeSuffix = tgSuffix.GetString();
+      if (typesGroup.TryGetProperty("classVisibility", out var tgCv))
+        classVisibility = tgCv.GetString();
+      if (typesGroup.TryGetProperty("memberVisibility", out var tgMv))
+        memberVisibility = tgMv.GetString();
+      if (typesGroup.TryGetProperty("localesVisibility", out var tgLv))
+        localesVisibility = tgLv.GetString();
+      if (typesGroup.TryGetProperty("suffix", out var tgSuffix))
+        sectionTypeSuffix = tgSuffix.GetString();
     }
 
     if (root.TryGetProperty("codegen", out var codegenGroup) && codegenGroup.ValueKind == JsonValueKind.Object)

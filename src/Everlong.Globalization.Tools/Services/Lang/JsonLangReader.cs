@@ -78,7 +78,8 @@ public class JsonLangReader
     // Advance to consume the StartObject token
     while (reader.TokenType != JsonTokenType.StartObject)
     {
-      if (!reader.Read()) return;
+      if (!reader.Read())
+        return;
     }
 
     string? pendingComment = null;
@@ -92,7 +93,8 @@ public class JsonLangReader
         case JsonTokenType.Comment:
           var commentText = reader.GetComment().Trim();
           // Skip block comments (they start with *) — line comments are plain text
-          if (commentText.StartsWith('*')) break;
+          if (commentText.StartsWith('*'))
+            break;
 
           if (!afterValue)
           {
@@ -129,7 +131,7 @@ public class JsonLangReader
           // Recurse into nested object
           if (currentProp != null && !currentProp.StartsWith('$'))
           {
-            string[] nestedPath = path.Length > 0 ? [..path, currentProp] : [currentProp];
+            string[] nestedPath = path.Length > 0 ? [.. path, currentProp] : [currentProp];
             ExtractCommentsFromObject(ref reader, nestedPath, result);
             afterValue = true;
           }
@@ -188,7 +190,7 @@ public class JsonLangReader
       }
       else
       {
-        FlattenRecursive(node.Children, [..prefix, node.Key], result);
+        FlattenRecursive(node.Children, [.. prefix, node.Key], result);
       }
     }
   }
@@ -198,7 +200,8 @@ public class JsonLangReader
     var nodes = new List<LangNode>();
     foreach (var prop in element.EnumerateObject())
     {
-      if (prop.Name.StartsWith('$')) continue;
+      if (prop.Name.StartsWith('$'))
+        continue;
       nodes.Add(ParseProperty(prop.Name, prop.Value));
     }
     return nodes;
@@ -212,7 +215,8 @@ public class JsonLangReader
     var nodes = new List<LangNode>();
     foreach (var prop in element.EnumerateObject())
     {
-      if (prop.Name.StartsWith('$')) continue;
+      if (prop.Name.StartsWith('$'))
+        continue;
       nodes.Add(ParsePropertyWithComments(prop.Name, prop.Value, comments, path));
     }
     return nodes;
@@ -266,7 +270,7 @@ public class JsonLangReader
           }
         }
         var nodeKey = keyOverride ?? key;
-        string[] childPath = path.Length > 0 ? [..path, key] : [key];
+        string[] childPath = path.Length > 0 ? [.. path, key] : [key];
         return new LangNode(nodeKey, null, ParseObjectWithComments(value, comments, childPath), []);
 
       case JsonValueKind.String:
@@ -358,8 +362,10 @@ public class JsonLangReader
     var i = openPos + 1;
     while (i < value.Length && depth > 0)
     {
-      if (value[i] == '{') depth++;
-      else if (value[i] == '}') depth--;
+      if (value[i] == '{')
+        depth++;
+      else if (value[i] == '}')
+        depth--;
       i++;
     }
     return i;

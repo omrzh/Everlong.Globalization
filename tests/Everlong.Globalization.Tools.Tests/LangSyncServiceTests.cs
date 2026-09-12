@@ -272,7 +272,8 @@ public class LangSyncServiceTests : IDisposable
   {
     foreach (var d in _tempDirs)
     {
-      try { Directory.Delete(d, recursive: true); }
+      try
+      { Directory.Delete(d, recursive: true); }
       catch { /* best-effort */ }
     }
   }

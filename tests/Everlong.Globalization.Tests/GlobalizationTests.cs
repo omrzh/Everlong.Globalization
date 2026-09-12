@@ -459,7 +459,9 @@ public class GlobalizationTests
   {
     var result = IcuMessageFormatter.Format("{a} + {b} = {c}", new Dictionary<string, object?>
     {
-      ["a"] = 1, ["b"] = 2, ["c"] = 3
+      ["a"] = 1,
+      ["b"] = 2,
+      ["c"] = 3
     });
     Assert.Equal("1 + 2 = 3", result);
   }

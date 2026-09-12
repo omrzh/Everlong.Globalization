@@ -54,7 +54,8 @@ public class LangCheckService(CsprojLocator locator, JsonLangReader reader)
 
     var cwd = Directory.GetCurrentDirectory();
     var located = locator.FindCsprojWithElg(cwd);
-    if (located is not null) return located;
+    if (located is not null)
+      return located;
 
     if (locator.FindCsproj(cwd) is null)
       Console.WriteLine($"No .csproj file found walking down from: {cwd}");
@@ -74,7 +75,8 @@ public class LangCheckService(CsprojLocator locator, JsonLangReader reader)
                .OrderBy(x => x))
     {
       var meta = reader.ReadWithMeta(File.ReadAllText(f));
-      if (meta.DataOnly) continue;
+      if (meta.DataOnly)
+        continue;
       merged.AddRange(meta.Nodes);
     }
     return merged;
@@ -107,10 +109,12 @@ public class LangCheckService(CsprojLocator locator, JsonLangReader reader)
   public IReadOnlyList<string> CheckSatelliteConsistency(string? projectOverride)
   {
     var csprojPath = ResolveAnyProjectCsproj(projectOverride);
-    if (csprojPath is null) return [];
+    if (csprojPath is null)
+      return [];
 
     var satellites = locator.ReadSatelliteLanguages(csprojPath);
-    if (satellites.Count == 0) return [];
+    if (satellites.Count == 0)
+      return [];
 
     var config = locator.ReadConfig(csprojPath);
     var localeFolders = Directory.GetDirectories(config.SourceDir)

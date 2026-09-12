@@ -92,7 +92,8 @@ public class CodeGenerator
     {
       foreach (var module in modules)
       {
-        if (module.DataOnly) continue;
+        if (module.DataOnly)
+          continue;
 
         var sectionPart = new StringBuilder();
         AppendFilePreamble(sectionPart, @namespace, generateXmlDoc, globalizationNamespace);
@@ -142,7 +143,8 @@ public class CodeGenerator
 
     foreach (var module in modules)
     {
-      if (module.DataOnly) continue;
+      if (module.DataOnly)
+        continue;
       var name = module.ModuleName;
       var sectionTypeName = BuildSectionTypeName(sectionTypeSuffix, name);
       if (generateXmlDoc)
@@ -266,7 +268,8 @@ public class CodeGenerator
   {
     foreach (var module in modules)
     {
-      if (module.DataOnly) continue;
+      if (module.DataOnly)
+        continue;
 
       sb.AppendLine();
       EmitModuleSectionClass(sb, module, defaultLocale, memberVisibility, generateFormatMethod, sectionTypeSuffix, generateXmlDoc);
@@ -436,13 +439,13 @@ public class CodeGenerator
               sb.AppendLine($"  /// <summary>The <c>{EscapeXmlDoc(propertyName)}</c> format template.</summary>");
           }
           sb.AppendLine($"  public string {propertyName} => {stringAccessor};");
-            if (generateFormatMethod)
-            {
-              var methodName = GetFormatMethodName(propertyName);
-              if (generateXmlDoc)
-                sb.AppendLine($"  /// <summary>Formats <see cref=\"{propertyName}\"/>.</summary>");
-              sb.AppendLine($"  public string {methodName}({paramList}) => IcuMessageFormatter.Format({propertyName}, new Dictionary<string, object?> {{ {dictPart} }});");
-            }
+          if (generateFormatMethod)
+          {
+            var methodName = GetFormatMethodName(propertyName);
+            if (generateXmlDoc)
+              sb.AppendLine($"  /// <summary>Formats <see cref=\"{propertyName}\"/>.</summary>");
+            sb.AppendLine($"  public string {methodName}({paramList}) => IcuMessageFormatter.Format({propertyName}, new Dictionary<string, object?> {{ {dictPart} }});");
+          }
         }
       }
     }
@@ -457,7 +460,7 @@ public class CodeGenerator
         sectionPath + node.Key,
         node.Children,
         neutralFlatValues,
-        [..keyPath, node.Key],
+        [.. keyPath, node.Key],
         memberVisibility,
         generateFormatMethod,
         sectionTypeSuffix,

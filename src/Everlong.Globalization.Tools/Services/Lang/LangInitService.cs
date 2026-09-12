@@ -15,7 +15,8 @@ public class LangInitService(CsprojLocator locator)
   public Task RunAsync(string? projectOverride, string? locale, CancellationToken ct = default)
   {
     var csprojPath = ResolveCsproj(projectOverride);
-    if (csprojPath is null) return Task.CompletedTask;
+    if (csprojPath is null)
+      return Task.CompletedTask;
 
     var resolvedLocale = locale ?? ReadNeutralLanguage(csprojPath) ?? "en";
 
@@ -62,7 +63,8 @@ public class LangInitService(CsprojLocator locator)
 
     var cwd = Directory.GetCurrentDirectory();
     var located = locator.FindCsproj(cwd);
-    if (located is not null) return located;
+    if (located is not null)
+      return located;
 
     Console.WriteLine($"No .csproj file found walking down from: {cwd}");
     return null;

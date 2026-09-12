@@ -48,7 +48,8 @@ public static class IcuMessageFormatter
         while (i < pattern.Length && pattern[i] != '\'')
           i++;
         var end = i; // position of closing quote (don't include it)
-        if (i < pattern.Length) i++; // skip closing quote
+        if (i < pattern.Length)
+          i++; // skip closing quote
         tokens.Add(new Token(TokenKind.Text, pattern[start..end], start));
         continue;
       }
@@ -233,17 +234,25 @@ public static class IcuMessageFormatter
     string category;
     if (isOrdinal)
     {
-      if (mod10 == 1 && mod100 != 11) category = "one";
-      else if (mod10 == 2 && mod100 != 12) category = "two";
-      else if (mod10 == 3 && mod100 != 13) category = "few";
-      else category = "other";
+      if (mod10 == 1 && mod100 != 11)
+        category = "one";
+      else if (mod10 == 2 && mod100 != 12)
+        category = "two";
+      else if (mod10 == 3 && mod100 != 13)
+        category = "few";
+      else
+        category = "other";
     }
     else
     {
-      if (n == 1 && mod100 != 11) category = "one";
-      else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) category = "few";
-      else if (n == 0 || (mod10 >= 11 && mod10 <= 14) || (mod100 >= 11 && mod100 <= 14)) category = "many";
-      else category = "other";
+      if (n == 1 && mod100 != 11)
+        category = "one";
+      else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+        category = "few";
+      else if (n == 0 || (mod10 >= 11 && mod10 <= 14) || (mod100 >= 11 && mod100 <= 14))
+        category = "many";
+      else
+        category = "other";
     }
 
     if (branches.TryGetValue(category, out var plural))
@@ -264,14 +273,16 @@ public static class IcuMessageFormatter
       while (i < end && tokens[i].Kind == TokenKind.Comma)
         i++;
 
-      if (i >= end) break;
+      if (i >= end)
+        break;
 
       var keyToken = tokens[i];
       if (keyToken.Kind != TokenKind.Text)
         break;
       i++;
 
-      if (i >= end) break;
+      if (i >= end)
+        break;
 
       var open = tokens[i];
       if (open.Kind == TokenKind.Open)
@@ -338,11 +349,13 @@ public static class IcuMessageFormatter
     var depth = 1;
     for (var i = openPos + 1; i < tokens.Count; i++)
     {
-      if (tokens[i].Kind == TokenKind.Open) depth++;
+      if (tokens[i].Kind == TokenKind.Open)
+        depth++;
       else if (tokens[i].Kind == TokenKind.Close)
       {
         depth--;
-        if (depth == 0) return i;
+        if (depth == 0)
+          return i;
       }
     }
 

@@ -21,7 +21,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
   public async Task RunAsync(string? locale, string? projectOverride, CancellationToken ct = default)
   {
     var csprojPath = ResolveCsproj(projectOverride);
-    if (csprojPath is null) return;
+    if (csprojPath is null)
+      return;
 
     var config = locator.ReadConfig(csprojPath);
     var localesToSync = locale is not null
@@ -52,7 +53,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
   private async Task SyncFileAsync(string locale, string defaultFile, string targetDir, CancellationToken ct)
   {
     var defaultContent = await File.ReadAllTextAsync(defaultFile, ct);
-    if (reader.ReadWithMeta(defaultContent).DataOnly) return;
+    if (reader.ReadWithMeta(defaultContent).DataOnly)
+      return;
 
     var fileName = Path.GetFileName(defaultFile)!;
     var targetFile = FindMatchingFile(targetDir, fileName)
@@ -62,7 +64,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     if (File.Exists(targetFile))
     {
       var targetContent = await File.ReadAllTextAsync(targetFile, ct);
-      if (reader.ReadWithMeta(targetContent).DataOnly) return;
+      if (reader.ReadWithMeta(targetContent).DataOnly)
+        return;
       targetJson = JsonNode.Parse(targetContent, null, JsoncOptions) as JsonObject;
     }
     targetJson ??= new JsonObject();
@@ -72,7 +75,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     var (rebuilt, addedCount) = ReconstructInOrder(defaultJson, targetJson);
     var rebuiltNormalized = rebuilt.ToJsonString(WriteOptions);
 
-    if (rebuiltNormalized == originalNormalized) return;
+    if (rebuiltNormalized == originalNormalized)
+      return;
 
     await File.WriteAllTextAsync(targetFile, rebuiltNormalized, ct);
 
@@ -95,7 +99,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
 
     foreach (var kvp in source)
     {
-      if (kvp.Key.StartsWith('$')) continue;
+      if (kvp.Key.StartsWith('$'))
+        continue;
 
       if (target.TryGetPropertyValue(kvp.Key, out var targetValue))
       {
@@ -137,7 +142,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     foreach (var ext in new[] { ".json", ".jsonc" })
     {
       var candidate = Path.Combine(dir, nameWithoutExt + ext);
-      if (File.Exists(candidate)) return candidate;
+      if (File.Exists(candidate))
+        return candidate;
     }
     return null;
   }
@@ -172,7 +178,8 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
 
     var cwd = Directory.GetCurrentDirectory();
     var located = locator.FindCsprojWithElg(cwd);
-    if (located is not null) return located;
+    if (located is not null)
+      return located;
 
     if (locator.FindCsproj(cwd) is null)
       Console.WriteLine($"No .csproj file found walking down from: {cwd}");

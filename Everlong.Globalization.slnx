@@ -13,5 +13,6 @@
     <File Path="LICENSE" />
     <File Path=".gitignore" />
     <File Path=".gitattributes" />
+    <File Path=".editorconfig" />
   </Folder>
 </Solution>

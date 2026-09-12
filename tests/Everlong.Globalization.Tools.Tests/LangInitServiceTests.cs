@@ -127,7 +127,8 @@ public class LangInitServiceTests : IDisposable
   {
     foreach (var dir in _tempDirs)
     {
-      try { Directory.Delete(dir, recursive: true); }
+      try
+      { Directory.Delete(dir, recursive: true); }
       catch { /* best-effort cleanup */ }
     }
   }
