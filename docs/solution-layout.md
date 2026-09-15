@@ -16,7 +16,7 @@ per-project contribution rules. `AGENTS.md` points here for structure.*
 
 # Repository root
 
-- `EverlongGlobalizationVersion.props` is the single source of the version — `GlobalizationVersion` = **0.2.1**
+- `EverlongGlobalizationVersion.props` is the single source of the version — `GlobalizationVersion` = **0.3.0**
   (`Version` / `FileVersion` / `AssemblyVersion` derive from it).
 - `Everlong.Globalization.slnx` lists the 2 `src/` projects and the 2 `tests/` projects.
 - `README.md` is the repo landing page / consumer readme. Each `src/` project packs its **own** `readme.md`
