@@ -20,7 +20,8 @@ public class LangGenServiceTests : IDisposable
     string defaultLocale = "en",
     bool localesPartial = false,
     bool sectionsPartial = false,
-    string? sectionTypeSuffix = null)
+    string? sectionTypeSuffix = null,
+    string? lineEnding = null)
   {
     var i18nJsonRelPath = Path.Combine(sourceDir, "i18n.json");
     var path = Path.Combine(dir, "Test.csproj");
@@ -33,10 +34,11 @@ public class LangGenServiceTests : IDisposable
       """);
     var absSourceDir = Path.GetFullPath(Path.Combine(dir, sourceDir));
     Directory.CreateDirectory(absSourceDir);
+    var lineEndingOption = lineEnding is null ? "" : $", \"lineEnding\": \"{lineEnding}\"";
     File.WriteAllText(Path.Combine(absSourceDir, "i18n.json"), $$"""
       {
         "locale": { "default": "{{defaultLocale}}" },
-        "output": { "dir": "{{output}}", "namespace": "{{ns}}" },
+        "output": { "dir": "{{output}}", "namespace": "{{ns}}"{{lineEndingOption}} },
         "types": { "classVisibility": "public", "suffix": "{{sectionTypeSuffix ?? "Strings"}}" },
         "codegen": {
           "xmlDoc": false,
@@ -345,6 +347,89 @@ public class LangGenServiceTests : IDisposable
     Assert.Contains("sealed class AppSection", content);
     Assert.Contains("public AppDialogSection Dialog", content);
     Assert.Contains("sealed class AppDialogSection", content);
+  }
+
+  [Fact]
+  public async Task LineEnding_Lf_WritesLfOnly()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    Directory.CreateDirectory(localeDir);
+    File.WriteAllText(Path.Combine(localeDir, "app.json"), """
+      { "Title": "My App", "Nav": { "Home": "Home" } }
+      """);
+
+    var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang", lineEnding: "lf");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+    await service.RunAsync(csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    LineEndingAssertions.AssertOnly(content, "\n");
+  }
+
+  [Fact]
+  public async Task LineEnding_Crlf_WritesCrlfOnly()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    Directory.CreateDirectory(localeDir);
+    File.WriteAllText(Path.Combine(localeDir, "app.json"), """
+      { "Title": "My App", "Nav": { "Home": "Home" } }
+      """);
+
+    var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang", lineEnding: "crlf");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+    await service.RunAsync(csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    LineEndingAssertions.AssertOnly(content, "\r\n");
+  }
+
+  [Fact]
+  public async Task LineEnding_NotConfigured_WritesPlatformNewLines()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    Directory.CreateDirectory(localeDir);
+    File.WriteAllText(Path.Combine(localeDir, "app.json"), """
+      { "Title": "My App", "Nav": { "Home": "Home" } }
+      """);
+
+    var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+    await service.RunAsync(csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    LineEndingAssertions.AssertOnly(content, Environment.NewLine);
+  }
+
+  [Fact]
+  public async Task LineEnding_Lf_AppliesToEveryGeneratedFile()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    var zhDir = Path.Combine(dir, "i18n", "zh-CN");
+    Directory.CreateDirectory(localeDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(localeDir, "app.json"), """{ "Title": "My App" }""");
+    File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Title": "我的应用" }""");
+
+    var csproj = WriteCsproj(
+      dir,
+      "i18n",
+      "Generated",
+      "MyApp.Lang",
+      localesPartial: true,
+      sectionsPartial: true,
+      lineEnding: "lf");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+    await service.RunAsync(csproj);
+
+    var generatedDir = Path.Combine(dir, "Generated");
+    var files = Directory.GetFiles(generatedDir, "*.g.cs");
+    Assert.Equal(3, files.Length); // main + Locales + per-module section
+    foreach (var file in files)
+      LineEndingAssertions.AssertOnly(await File.ReadAllTextAsync(file), "\n");
   }
 
   [Fact]

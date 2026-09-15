@@ -89,8 +89,27 @@ public class LangInitServiceTests : IDisposable
     Assert.Contains("\"formattingMethod\"", template);
     Assert.Contains("\"localesPartial\"", template);
     Assert.Contains("\"sectionsPartial\"", template);
+    Assert.Contains("\"lineEnding\"", template);
+    Assert.Contains("\"platform\"", template);
     Assert.Contains("true", template);
     Assert.Contains("false", template);
+  }
+
+  [Fact]
+  public async Task Init_TemplateConfig_IsReadableByTheLocator()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteCsproj(dir);
+    var service = new LangInitService(new CsprojLocator());
+
+    await service.RunAsync(csproj, "en");
+
+    // The template ships every key, so it must survive the parser the tool itself uses.
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal("MyApp.Properties", config.Namespace);
+    Assert.Equal("en", config.DefaultLocale);
+    Assert.Equal("platform", config.LineEnding);
   }
 
   [Fact]

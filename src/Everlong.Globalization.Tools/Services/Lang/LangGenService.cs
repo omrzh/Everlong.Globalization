@@ -83,7 +83,7 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
           File.SetAttributes(outputPath, attrs & ~FileAttributes.ReadOnly);
       }
 
-      await File.WriteAllTextAsync(outputPath, generatedFile.Content, ct);
+      await File.WriteAllTextAsync(outputPath, LineEndings.Apply(generatedFile.Content, config.LineEnding), ct);
 
       File.SetAttributes(outputPath, File.GetAttributes(outputPath) | FileAttributes.ReadOnly);
 

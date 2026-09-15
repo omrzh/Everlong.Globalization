@@ -46,11 +46,11 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     foreach (var defaultFile in GetLocaleFiles(defaultDir))
     {
       ct.ThrowIfCancellationRequested();
-      await SyncFileAsync(locale, defaultFile, targetDir, ct);
+      await SyncFileAsync(locale, defaultFile, targetDir, config.LineEnding, ct);
     }
   }
 
-  private async Task SyncFileAsync(string locale, string defaultFile, string targetDir, CancellationToken ct)
+  private async Task SyncFileAsync(string locale, string defaultFile, string targetDir, string lineEnding, CancellationToken ct)
   {
     var defaultContent = await File.ReadAllTextAsync(defaultFile, ct);
     if (reader.ReadWithMeta(defaultContent).DataOnly)
@@ -75,10 +75,13 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     var (rebuilt, addedCount) = ReconstructInOrder(defaultJson, targetJson);
     var rebuiltNormalized = rebuilt.ToJsonString(WriteOptions);
 
+    // The decision to write compares the rebuilt content against what the file holds today, in the
+    // writer's own line endings — so a file that is already in sync stays untouched even when the
+    // configured ending differs from the one on disk.
     if (rebuiltNormalized == originalNormalized)
       return;
 
-    await File.WriteAllTextAsync(targetFile, rebuiltNormalized, ct);
+    await File.WriteAllTextAsync(targetFile, LineEndings.Apply(rebuiltNormalized, lineEnding), ct);
 
     if (addedCount > 0)
       Console.WriteLine($"  {locale}/{fileName}: {addedCount} key(s) added");

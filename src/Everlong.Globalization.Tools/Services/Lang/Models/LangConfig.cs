@@ -17,4 +17,5 @@ public record LangConfig(
   string SectionTypeSuffix,
   bool GenerateCoordinator,
   IReadOnlyList<string> CoordinatorManifests,
-  string GlobalizationNamespace = "Everlong.Globalization");
+  string GlobalizationNamespace = "Everlong.Globalization",
+  string LineEnding = LineEndings.Platform);

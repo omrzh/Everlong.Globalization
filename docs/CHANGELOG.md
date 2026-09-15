@@ -2,6 +2,15 @@
 
 What changed per release, newest first.
 
+## Unreleased
+
+### Added
+
+- `output.lineEnding` — pick the line endings of every file the tool writes: `"lf"`, `"crlf"`, or
+  `"platform"` (the default) to follow the convention of the running OS. Configuring `"lf"` makes a
+  regeneration byte-identical across platforms, so running `gen` or `sync` on Windows no longer
+  rewrites LF files as CRLF.
+
 ## 0.1.0 — 2026-07-23
 
 Initial release.

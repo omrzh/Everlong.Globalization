@@ -141,6 +141,7 @@ public class CsprojLocator
     var generateCoordinator = i18nConfig.GenerateCoordinator ?? false;
     var coordinatorManifests = i18nConfig.CoordinatorManifests ?? [];
     var globalizationNamespace = i18nConfig.GlobalizationNamespace ?? "Everlong.Globalization";
+    var lineEnding = NormalizeLineEnding(i18nConfig.LineEnding, absConfigFile);
 
     if (memberVisibility == "public" && classVisibility == "internal")
       throw new InvalidLangConfigException(
@@ -171,7 +172,26 @@ public class CsprojLocator
       sectionTypeSuffix,
       generateCoordinator,
       coordinatorManifests,
-      globalizationNamespace);
+      globalizationNamespace,
+      lineEnding);
+  }
+
+  /// <summary>
+  ///   Normalizes the <c>output.lineEnding</c> option to its canonical spelling, falling back to
+  ///   <see cref="LineEndings.Platform" /> when the config leaves it out. Anything else is a typo
+  ///   that would silently produce the wrong bytes, so it fails the run instead.
+  /// </summary>
+  private static string NormalizeLineEnding(string? configured, string configFile)
+  {
+    var value = configured?.Trim().ToLowerInvariant();
+    if (string.IsNullOrEmpty(value))
+      return LineEndings.Platform;
+    if (value is "lf" or "crlf" or LineEndings.Platform)
+      return value;
+
+    throw new InvalidLangConfigException(
+      $"Invalid i18n config in '{configFile}': " +
+      $"output.lineEnding must be \"lf\", \"crlf\" or \"{LineEndings.Platform}\", but was \"{configured}\".");
   }
 
   internal static string DeriveNamespace(string csprojPath, XDocument xml, string outputDir = "Properties")
@@ -226,7 +246,7 @@ public class CsprojLocator
 
     string? ns = null, defaultLocale = null, outputDir = null, sourceDir = null,
             className = null, classVisibility = null, memberVisibility = null,
-            localesVisibility = null, globalizationNamespace = null;
+            localesVisibility = null, globalizationNamespace = null, lineEnding = null;
     bool? generateXmlDoc = null, generateFormatMethod = null;
     bool? localesInPartialFile = null, sectionClassesInPartialFiles = null;
     string? sectionTypeSuffix = null;
@@ -249,6 +269,14 @@ public class CsprojLocator
         ns = ogNs.GetString();
       if (outputGroup.TryGetProperty("className", out var ogCn))
         className = ogCn.GetString();
+      if (outputGroup.TryGetProperty("lineEnding", out var ogLe))
+        lineEnding = ogLe.ValueKind switch
+        {
+          JsonValueKind.String => ogLe.GetString(),
+          JsonValueKind.Null => null,
+          // Keep the raw token so the validation error quotes what the file actually says.
+          _ => ogLe.GetRawText()
+        };
     }
 
     if (root.TryGetProperty("types", out var typesGroup) && typesGroup.ValueKind == JsonValueKind.Object)
@@ -293,7 +321,7 @@ public class CsprojLocator
 
     return new I18nFileConfig(
       ns, defaultLocale, outputDir, sourceDir, className, classVisibility, memberVisibility, generateXmlDoc, generateFormatMethod, localesVisibility,
-      localesInPartialFile, sectionClassesInPartialFiles, sectionTypeSuffix, generateCoordinator, coordinatorManifests, globalizationNamespace);
+      localesInPartialFile, sectionClassesInPartialFiles, sectionTypeSuffix, generateCoordinator, coordinatorManifests, globalizationNamespace, lineEnding);
   }
 }
 
@@ -313,7 +341,8 @@ internal record I18nFileConfig(
   string? SectionTypeSuffix = null,
   bool? GenerateCoordinator = null,
   IReadOnlyList<string>? CoordinatorManifests = null,
-  string? GlobalizationNamespace = null);
+  string? GlobalizationNamespace = null,
+  string? LineEnding = null);
 
 public class NoCsprojFoundException(string message) : Exception(message);
 public class MissingLangConfigException(string csprojPath, string property)

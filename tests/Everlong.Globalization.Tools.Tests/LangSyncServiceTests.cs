@@ -15,7 +15,7 @@ public class LangSyncServiceTests : IDisposable
     return path;
   }
 
-  private static string WriteCsproj(string dir, string sourceDir, string defaultLocale = "en")
+  private static string WriteCsproj(string dir, string sourceDir, string defaultLocale = "en", string? lineEnding = null)
   {
     var i18nJsonRelPath = Path.Combine(sourceDir, "i18n.json");
     var path = Path.Combine(dir, "Test.csproj");
@@ -28,10 +28,11 @@ public class LangSyncServiceTests : IDisposable
       """);
     var absSourceDir = Path.GetFullPath(Path.Combine(dir, sourceDir));
     Directory.CreateDirectory(absSourceDir);
+    var lineEndingOption = lineEnding is null ? "" : $", \"lineEnding\": \"{lineEnding}\"";
     File.WriteAllText(Path.Combine(absSourceDir, "i18n.json"), $$"""
       {
         "locale": { "default": "{{defaultLocale}}" },
-        "output": { "dir": "Generated", "namespace": "MyApp.Lang" },
+        "output": { "dir": "Generated", "namespace": "MyApp.Lang"{{lineEndingOption}} },
         "types": { "classVisibility": "public" },
         "codegen": { "xmlDoc": false }
       }
@@ -266,6 +267,63 @@ public class LangSyncServiceTests : IDisposable
     Assert.Contains("互動實驗室", json);
     Assert.Contains("集中展示", json);
     Assert.DoesNotContain(@"\u", json);
+  }
+
+  [Fact]
+  public async Task LineEnding_Lf_SyncedFileHasLfOnly()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello", "Bye": "Goodbye" }""");
+    File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
+
+    var csproj = WriteCsproj(dir, "i18n", lineEnding: "lf");
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"));
+    Assert.Contains("Goodbye", content); // the file was rewritten, not skipped
+    LineEndingAssertions.AssertOnly(content, "\n");
+  }
+
+  [Fact]
+  public async Task LineEnding_NotConfigured_SyncedFileUsesPlatformNewLines()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello", "Bye": "Goodbye" }""");
+    File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"));
+    LineEndingAssertions.AssertOnly(content, Environment.NewLine);
+  }
+
+  [Fact]
+  public async Task LineEnding_Lf_AdoptFileIsCreatedWithLfOnly()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var frDir = Path.Combine(sourceDir, "fr");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(frDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+
+    var csproj = WriteCsproj(dir, "i18n", lineEnding: "lf");
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(frDir, "app.json"));
+    LineEndingAssertions.AssertOnly(content, "\n");
   }
 
   public void Dispose()

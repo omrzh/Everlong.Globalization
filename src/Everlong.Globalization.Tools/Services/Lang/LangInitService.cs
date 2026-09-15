@@ -92,7 +92,11 @@ public class LangInitService(CsprojLocator locator)
              // C# namespace of the generated class.
              "namespace": "{{derivedNamespace}}",
              // Root static class name.
-             "className": "Lang"
+             "className": "Lang",
+             // Line endings of every file this tool writes: "lf", "crlf", or "platform" (default)
+             // to follow the convention of the running OS. Set it to the end_of_line your
+             // .editorconfig declares, so a regeneration is byte-identical to the committed file.
+             "lineEnding": "platform"
            },
 
            // --- Type visibility ---

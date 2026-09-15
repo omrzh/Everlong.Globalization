@@ -78,6 +78,21 @@ public class CsprojLocatorTests : IDisposable
       """);
   }
 
+  /// <summary>
+  ///   Writes an i18n.json whose <c>output</c> group carries <paramref name="lineEndingValue" /> as
+  ///   raw JSON, so the tests can feed a string value, a wrong kind, or a typo.
+  /// </summary>
+  private static void WriteI18nConfigWithLineEnding(string sourceDir, string lineEndingValue)
+  {
+    Directory.CreateDirectory(sourceDir);
+    File.WriteAllText(Path.Combine(sourceDir, "i18n.json"), $$"""
+      {
+        "locale": { "default": "en" },
+        "output": { "dir": "Properties", "namespace": "MyApp.Properties", "lineEnding": {{lineEndingValue}} }
+      }
+      """);
+  }
+
   [Fact]
   public void FindCsproj_InSameDir()
   {
@@ -382,6 +397,81 @@ public class CsprojLocatorTests : IDisposable
     Assert.False(config.GenerateFormatMethod);
     Assert.True(config.LocalesInPartialFile);
     Assert.True(config.SectionClassesInPartialFiles);
+  }
+
+  [Theory]
+  [InlineData("lf")]
+  [InlineData("crlf")]
+  [InlineData("platform")]
+  public void ReadConfig_LineEnding_FromI18nJson(string configured)
+  {
+    var dir = CreateTempDir();
+    WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), $"\"{configured}\"");
+    var csproj = WriteCsproj(dir, "<Elg>true</Elg>");
+
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal(configured, config.LineEnding);
+  }
+
+  [Fact]
+  public void ReadConfig_LineEnding_IsNormalizedToLowerCase()
+  {
+    var dir = CreateTempDir();
+    WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), "\"LF\"");
+    var csproj = WriteCsproj(dir, "<Elg>true</Elg>");
+
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal("lf", config.LineEnding);
+  }
+
+  [Fact]
+  public void ReadConfig_LineEnding_DefaultIsPlatform_WhenAbsent()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteCsproj(dir, "<RootNamespace>MyApp</RootNamespace>");
+
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal("platform", config.LineEnding);
+  }
+
+  [Fact]
+  public void ReadConfig_LineEnding_DefaultIsPlatform_WhenNull()
+  {
+    var dir = CreateTempDir();
+    WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), "null");
+    var csproj = WriteCsproj(dir, "<Elg>true</Elg>");
+
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal("platform", config.LineEnding);
+  }
+
+  [Fact]
+  public void ReadConfig_UnknownLineEnding_Throws()
+  {
+    var dir = CreateTempDir();
+    WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), "\"unix\"");
+    var csproj = WriteCsproj(dir, "<Elg>true</Elg>");
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("output.lineEnding", ex.Message);
+    Assert.Contains("unix", ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_NonStringLineEnding_Throws()
+  {
+    var dir = CreateTempDir();
+    WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), "5");
+    var csproj = WriteCsproj(dir, "<Elg>true</Elg>");
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("output.lineEnding", ex.Message);
   }
 
   [Fact]

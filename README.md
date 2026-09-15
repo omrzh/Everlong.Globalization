@@ -218,7 +218,8 @@ The `i18n.jsonc` (or `.json`) file controls code generation:
   "output": {
     "dir": "Properties",
     "namespace": "MyApp.Properties",
-    "className": "Lang"
+    "className": "Lang",
+    "lineEnding": "platform"
   },
   "types": {
     "classVisibility": "public",
@@ -235,6 +236,11 @@ The `i18n.jsonc` (or `.json`) file controls code generation:
   }
 }
 ```
+
+`output.lineEnding` decides the bytes of every file the tool writes — the generated `Lang*.g.cs` files
+and the locale JSON that `sync` rewrites: `"lf"`, `"crlf"`, or `"platform"` (the default) to follow the
+convention of the running OS. Set it to the `end_of_line` your `.editorconfig` already declares, so
+regenerating on any platform leaves the working tree unchanged.
 
 ---
 

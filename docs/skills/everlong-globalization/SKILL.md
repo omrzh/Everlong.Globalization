@@ -120,6 +120,22 @@ Generated files are marked ReadOnly — the IDE will show them as non-editable. 
 
 This tells the generator which `using` directive to emit. The default is `"Everlong.Globalization"`. Only change this if you forked the runtime library and renamed the namespace. **Otherwise leave it alone.**
 
+### 2.5 Line endings of written files
+
+```jsonc
+"output": {
+    "lineEnding": "platform"   // "lf" | "crlf" | "platform" (default)
+}
+```
+
+`gen` builds its files through the platform's newline and `sync` indents JSON the same way, so without
+this option the bytes depend on where the tool runs: Windows writes CRLF, Linux and macOS write LF. Set
+`lineEnding` to the value your repository already declares — `.editorconfig` → `end_of_line`, `lf` for
+most repos — and a regeneration is byte-identical on every platform, which keeps `git status` clean
+instead of reporting every generated file as modified.
+
+The tool never reads `.editorconfig` or `.gitattributes`; `platform` is the fallback, not detection.
+
 ---
 
 ## 3. String Key Naming Conventions
@@ -302,6 +318,7 @@ When `Lang.Provider.Use(NullStringProvider.Instance)` is called, `Lang.Dialog.Al
 | Omitting the fallback parameter | `GetString("key")` returns empty string; blank UI is worse than English text |
 | Running multiple generators concurrently on the same project | `Lang.g.cs` is a single file; concurrent writes produce corruption |
 | Renaming keys in i18n config after they've been merged to main | Already-generated `Lang.g.cs` property names don't auto-update — rename = API change, requires a new `dotnet elg gen` and syncing all translation files |
+| Leaving `output.lineEnding` unset in a repo whose `.editorconfig` says `end_of_line = lf` | The tool falls back to the OS newline, so a Windows regeneration rewrites every generated file as CRLF and `git status` reports them modified until staged |
 
 ---
 
