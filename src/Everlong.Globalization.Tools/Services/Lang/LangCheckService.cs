@@ -64,6 +64,53 @@ public class LangCheckService(CsprojLocator locator, JsonLangReader reader)
     return null;
   }
 
+  /// <summary>
+  ///   Reports every catalog whose line breaks are not the ones <c>output.lineEnding</c> declares,
+  ///   default locale included: <c>gen</c> and <c>sync</c> only rewrite the files they happen to write,
+  ///   so a drift nobody touched can sit in the tree indefinitely and then surface in the middle of
+  ///   someone else's commit.  A repository that declares one ending wants to be told, not to find out.
+  /// </summary>
+  public IReadOnlyList<string> CheckLineEndings(string? projectOverride)
+  {
+    var csprojPath = ResolveCsprojWithoutReporting(projectOverride);
+    if (csprojPath is null)
+      return [];
+
+    var config = locator.ReadConfig(csprojPath);
+    if (!Directory.Exists(config.SourceDir))
+      return [];
+
+    var issues = new List<string>();
+    foreach (var localeDir in Directory.GetDirectories(config.SourceDir).OrderBy(d => d, StringComparer.Ordinal))
+    {
+      foreach (var f in Directory.GetFiles(localeDir, "*.json")
+                 .Concat(Directory.GetFiles(localeDir, "*.jsonc"))
+                 .OrderBy(x => x, StringComparer.Ordinal))
+      {
+        var content = File.ReadAllText(f);
+        if (!LineEndings.Uses(content, config.LineEnding))
+        {
+          issues.Add(
+            $"{Path.GetFileName(localeDir)}/{Path.GetFileName(f)}: " +
+            $"{LineEndings.Describe(content)}, expected {config.LineEnding} — run `dotnet elg normalize`");
+        }
+      }
+    }
+
+    return issues;
+  }
+
+  private string? ResolveCsprojWithoutReporting(string? projectOverride)
+  {
+    if (!string.IsNullOrWhiteSpace(projectOverride))
+    {
+      var fullPath = Path.GetFullPath(projectOverride);
+      return File.Exists(fullPath) && locator.HasElgDeclaration(fullPath) ? fullPath : null;
+    }
+
+    return locator.FindCsprojWithElg(Directory.GetCurrentDirectory());
+  }
+
   private IReadOnlyList<LangNode> ReadLocale(LangConfig config, string locale)
   {
     var folder = Path.Combine(config.SourceDir, locale);

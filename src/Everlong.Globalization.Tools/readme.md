@@ -39,6 +39,7 @@ dotnet elg add fr
 | `add <locale>` | Add a new locale (copy from default) |
 | `check` | Validate key consistency across all locales |
 | `sync [locale]` | Sync missing keys and ordering from the default locale |
+| `normalize` | Rewrite every catalog with the configured line endings |
 
 ### `init`
 
@@ -76,8 +77,9 @@ dotnet elg check [--project <csproj>]
 ```
 
 Checks every non-default locale against the default for missing and orphan
-keys. Also validates `<SatelliteResourceLanguages>` consistency.
-Exits with code 1 if any issues found.
+keys. Also validates `<SatelliteResourceLanguages>` consistency and reports
+any catalog whose line endings are not the declared ones. Exits with code 1
+if any issues found.
 
 ### `sync`
 
@@ -90,6 +92,21 @@ files and re-orders keys to match the default locale. Preserves existing
 translations; a file whose keys are already in sync but whose line endings are
 not the configured ones is rewritten as well. When `locale` is omitted, syncs
 all non-default locales.
+
+### `normalize`
+
+```
+dotnet elg normalize [--project <csproj>]
+```
+
+Rewrites every catalog with the line endings `output.lineEnding` declares —
+the default locale included, which no other command writes. Use it when the
+option changes on an existing repository: declare the value, run `normalize`
+then `gen`, and commit the result on its own. It validates every catalog
+before writing any of them (a broken one leaves the tree unconverted rather
+than half converted) and never rewrites the config file itself, which would
+drop its comments. The command prints the `.git-blame-ignore-revs` step that
+keeps `git blame` readable.
 
 ---
 

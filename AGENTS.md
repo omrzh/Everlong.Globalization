@@ -115,7 +115,11 @@ is upstream and does not load a how-to about itself, so there is no `.agents/ski
 - `dotnet elg check` must stay green (locales in sync); renaming a key = API change, needs regen + translation sync.
 - The `i18n.jsonc` surface lives in one table (`LangOptions` in `Everlong.Globalization.Tools`): the
   reader validates against it, `init`'s scaffold and the option lists in the docs are driven from it. An
-  unknown key fails the run; locale files stay permissive (any key there is a string entry).
+  unknown key fails the run; locale files stay permissive (any key there is a string entry) but a
+  malformed one is reported with its path.
+- Changing `output.lineEnding` is a repository-wide byte change: declare it, then run
+  `dotnet elg normalize` (every catalog, default locale included) and `dotnet elg gen` in one commit,
+  and record that commit in `.git-blame-ignore-revs`. `dotnet elg check` fails while any catalog drifts.
 
 ## Contribution gotchas
 

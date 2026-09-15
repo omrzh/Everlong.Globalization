@@ -4,13 +4,19 @@ namespace Everlong.Globalization.Tools.Services.Lang;
 
 public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGenerator generator)
 {
-  public async Task RunAsync(string? projectOverride, CancellationToken ct = default)
+  /// <summary>
+  ///   Generates every project it resolves.  Returns the number of projects it had to skip: a batch
+  ///   that skipped one has not finished its job, so the command exits non-zero rather than reporting a
+  ///   success the tree does not have.
+  /// </summary>
+  public async Task<int> RunAsync(string? projectOverride, CancellationToken ct = default)
   {
     var singleProjectMode = !string.IsNullOrWhiteSpace(projectOverride);
     var csprojPaths = ResolveCsprojPaths(projectOverride);
     if (csprojPaths.Count == 0)
-      return;
+      return 0;
 
+    var skipped = 0;
     foreach (var csprojPath in csprojPaths)
     {
       try
@@ -25,6 +31,7 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
       {
         WriteSkipped(csprojPath);
         WriteReason(ex.Message);
+        skipped++;
       }
       catch (Exception)
       {
@@ -34,6 +41,13 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
         throw;
       }
     }
+
+    if (skipped > 0)
+      WriteColoredLine(
+        ConsoleColor.DarkYellow,
+        $"{skipped} project(s) skipped; the run fails so a batch cannot look successful.");
+
+    return skipped;
   }
 
   private async Task GenerateForProjectAsync(string csprojPath, CancellationToken ct)

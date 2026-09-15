@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Everlong.Globalization.Tools.Tests;
 
 /// <summary>Redirects <see cref="Console.Out" /> in places, so it runs in its own collection.</summary>
-[Collection(ConsoleOutputCollection.Name)]
+[Collection(ProcessWideStateCollection.Name)]
 public class LangSyncServiceTests : IDisposable
 {
   private readonly List<string> _tempDirs = new();

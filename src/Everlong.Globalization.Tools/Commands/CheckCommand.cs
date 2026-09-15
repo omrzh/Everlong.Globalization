@@ -48,6 +48,16 @@ public static class CheckCommand
           Console.WriteLine($"  WARNING: {w}");
       }
 
+      var endingIssues = service.CheckLineEndings(project);
+      if (endingIssues.Count > 0)
+      {
+        anyIssue = true;
+        Console.WriteLine();
+        Console.WriteLine("Catalogs that do not use the configured line endings:");
+        foreach (var issue in endingIssues)
+          Console.WriteLine($"  DRIFT:   {issue}");
+      }
+
       ctx.ExitCode = anyIssue ? 1 : 0;
     });
 

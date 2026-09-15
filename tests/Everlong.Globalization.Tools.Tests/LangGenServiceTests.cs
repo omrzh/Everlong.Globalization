@@ -1,7 +1,7 @@
 namespace Everlong.Globalization.Tools.Tests;
 
 /// <summary>Redirects <see cref="Console.Out" /> in places, so it runs in its own collection.</summary>
-[Collection(ConsoleOutputCollection.Name)]
+[Collection(ProcessWideStateCollection.Name)]
 public class LangGenServiceTests : IDisposable
 {
   private readonly List<string> _tempDirs = new();
@@ -583,9 +583,10 @@ public class LangGenServiceTests : IDisposable
     var oldCwd = Directory.GetCurrentDirectory();
     Directory.SetCurrentDirectory(root);
     Console.SetOut(sw);
+    int skipped;
     try
     {
-      await service.RunAsync(projectOverride: null, ct: TestContext.Current.CancellationToken);
+      skipped = await service.RunAsync(projectOverride: null, ct: TestContext.Current.CancellationToken);
     }
     finally
     {
@@ -593,7 +594,10 @@ public class LangGenServiceTests : IDisposable
       Directory.SetCurrentDirectory(oldCwd);
     }
 
+    // The projects around the broken one are still generated, and the batch reports what it skipped
+    // so the command can fail instead of looking successful.
     Assert.True(File.Exists(Path.Combine(okDir, "Generated", "Lang.g.cs")));
+    Assert.Equal(1, skipped);
     Assert.Contains("Skipped:", sw.ToString());
     Assert.Contains(Path.Combine(invalidDir, "B.csproj"), sw.ToString());
   }

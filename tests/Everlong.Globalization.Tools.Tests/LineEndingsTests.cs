@@ -62,4 +62,21 @@ public class LineEndingsTests
   public void Uses_ReportsWhetherTheContentHoldsOnlyTheConfiguredEnding(
     string option, string content, bool expected)
     => Assert.Equal(expected, LineEndings.Uses(content, option));
+
+  /// <summary>
+  ///   What the content actually holds, for the message that tells a maintainer what to change.  A file
+  ///   with one kind of break has to be named as that kind — a plain LF file reported as "mixed" makes
+  ///   the diagnosis worthless.
+  /// </summary>
+  [Theory]
+  [InlineData("A\nB", "lf")]
+  [InlineData("A\r\nB", "crlf")]
+  [InlineData("AB", "none")]
+  [InlineData("", "none")]
+  [InlineData("A\nB\r\nC", "mixed")]
+  [InlineData("A\rB", "mixed")]
+  [InlineData("A\u2028B", "mixed")]
+  [InlineData("A\u0085B", "mixed")]
+  public void Describe_NamesWhatTheContentHolds(string content, string expected)
+    => Assert.Equal(expected, LineEndings.Describe(content));
 }

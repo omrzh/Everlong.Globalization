@@ -10,6 +10,7 @@ root.AddCommand(GenCommand.Build());
 root.AddCommand(AddCommand.Build());
 root.AddCommand(CheckCommand.Build());
 root.AddCommand(SyncCommand.Build());
+root.AddCommand(NormalizeCommand.Build());
 
 // The default pipeline ends with `UseExceptionHandler`, which answers every failure with a stack
 // trace.  A config the tool cannot act on is a user error — the message is the whole diagnosis — so

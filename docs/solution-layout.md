@@ -45,7 +45,7 @@ configuration.
 
 # src/Everlong.Globalization.Tools/
 
-The `dotnet-elg` CLI: `init`, `gen`, `add`, `check`, `sync` over `Properties/i18n/**/*.json`. It is the
+The `dotnet-elg` CLI: `init`, `gen`, `add`, `check`, `sync`, `normalize` over `Properties/i18n/**/*.json`. It is the
 only sanctioned way to generate `Lang.g.cs` — never hand-write the generated file.
 
 `net8.0`, `OutputType=Exe`, `PackageId Everlong.Globalization.Tools`, `PackAsTool=true`,
@@ -58,8 +58,8 @@ The `i18n.jsonc` surface is one table — `Services/Lang/Models/LangOptions.cs` 
 allowed values, default, doc comment). `LangConfigFileReader` validates a config against it,
 `LangConfigTemplate` renders `init`'s scaffold from it, `LineEndings` resolves its one value token, and
 `LangOptionsTests` compares the docs' key sets to it. `LocaleFile` reads a catalog so a syntax error
-names the file, and `LangExceptions` carries the failures that are reported as one message rather than a
-stack trace.
+names the file, `LangNormalizeService` rewrites every catalog with the configured ending, and
+`LangExceptions` carries the failures that are reported as one message rather than a stack trace.
 
 ---
 

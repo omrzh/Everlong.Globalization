@@ -18,7 +18,7 @@ dotnet add package Everlong.Globalization
 - **`StringSectionBase`** — `INotifyPropertyChanged` base class for generated typed accessors
 - **`DictionaryStringProvider`**, **`ChainedStringProvider`**, **`FallbackStringProvider`**, **`NullStringProvider`** — ready-to-use provider implementations
 - **`IcuMessageFormatter`** — minimal ICU MessageFormat engine (supports `{name}`, `{name, select, …}`, `{name, plural, …}`)
-- **`dotnet elg` CLI** — init, code-gen, add locale, check consistency, sync keys
+- **`dotnet elg` CLI** — init, code-gen, add locale, check consistency, sync keys, normalize line endings
 
 ---
 
@@ -161,6 +161,7 @@ Commands:
   add <locale>     Add a new locale (copy from default)
   check            Validate key consistency across locales
   sync [locale]    Sync keys/order from default locale
+  normalize        Rewrite every catalog with the configured line endings
 ```
 
 ### `init`
@@ -194,7 +195,7 @@ line endings. Use `--force` to overwrite an existing folder.
 dotnet elg check [--project <csproj>]
 ```
 
-Checks every non-default locale against the default for missing and orphan keys. Also validates `<SatelliteResourceLanguages>` consistency. Exits with code 1 if any issues found.
+Checks every non-default locale against the default for missing and orphan keys. Also validates `<SatelliteResourceLanguages>` consistency, and reports every catalog — default locale included — whose line endings are not the ones `output.lineEnding` declares. Exits with code 1 if any issues found.
 
 ### `sync`
 
@@ -203,6 +204,25 @@ dotnet elg sync [locale] [--project <csproj>]
 ```
 
 Adds missing keys (with default values) to locale files and re-orders keys to match the default locale. Preserves existing translations. A file whose keys are already in sync but whose line endings are not the configured ones is rewritten too, so `sync` and `gen` agree about the bytes. When `locale` is omitted, syncs all non-default locales.
+
+### `normalize`
+
+```
+dotnet elg normalize [--project <csproj>]
+```
+
+Rewrites every catalog with the line endings `output.lineEnding` declares — the default locale included,
+which no other command writes. It is the migration step for changing the option on an existing
+repository: declare the value, run `normalize` and then `gen`, and commit the result on its own. It
+validates every catalog before writing any of them, so a broken one leaves the tree unconverted rather
+than half converted, and it never rewrites the config file itself (that would drop its comments).
+
+The command prints the recipe for the final step, which is keeping `git blame` readable:
+
+```bash
+git rev-parse HEAD >> .git-blame-ignore-revs
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ---
 

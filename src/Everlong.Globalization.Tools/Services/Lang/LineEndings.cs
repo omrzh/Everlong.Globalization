@@ -25,6 +25,12 @@ internal static class LineEndings
   private static readonly char[] Breaks = ['\r', '\n', '\f', '\u0085', '\u2028', '\u2029'];
 
   /// <summary>
+  ///   The breaks <see cref="Describe" /> does not name individually: any of them means a file holds
+  ///   more than one kind, which is why this set excludes CR and LF.
+  /// </summary>
+  private static readonly char[] OtherBreaks = ['\f', '\u0085', '\u2028', '\u2029'];
+
+  /// <summary>
   ///   Maps an option already normalized by <see cref="LangConfigFileReader" /> to the sequence to write.
   ///   An unknown token is a programming error — the reader rejects one long before this point — so it
   ///   fails loudly instead of quietly writing the platform's convention.
@@ -52,4 +58,27 @@ internal static class LineEndings
   /// </summary>
   public static bool Uses(string content, string option)
     => content.Replace(Resolve(option), "").IndexOfAny(Breaks) < 0;
+
+  /// <summary>
+  ///   What <paramref name="content" /> actually holds, so a message can say what to change:
+  ///   <c>lf</c>, <c>crlf</c>, <c>mixed</c> when more than one kind appears (including the exotic ones),
+  ///   or <c>none</c> for a file with no line break at all.
+  /// </summary>
+  public static string Describe(string content)
+  {
+    var crlf = content.Contains("\r\n", StringComparison.Ordinal);
+    var remainder = content.Replace("\r\n", "", StringComparison.Ordinal);
+    var lf = remainder.Contains('\n');
+    var cr = remainder.Contains('\r');
+    var exotic = remainder.IndexOfAny(OtherBreaks) >= 0;
+
+    if (crlf && !lf && !cr && !exotic)
+      return Crlf;
+    if (lf && !crlf && !cr && !exotic)
+      return Lf;
+    if (!crlf && !lf && !cr && !exotic)
+      return "none";
+
+    return "mixed";
+  }
 }

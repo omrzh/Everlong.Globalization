@@ -6,6 +6,13 @@ What changed per release, newest first.
 
 ### Added
 
+- `dotnet elg normalize` — rewrites every catalog with the line endings `output.lineEnding` declares,
+  the default locale included, because no other command writes that directory. It is the migration step
+  for changing the option on an existing repository: declare the value, run `normalize` then `gen`, and
+  land the result as one commit; the command prints the `.git-blame-ignore-revs` step that keeps
+  `git blame` readable. Every catalog is validated before any of them is written, so a broken one leaves
+  the tree unconverted rather than half converted, and the config file itself is never rewritten (that
+  would drop its comments).
 - Config validation against a single option table. An unknown group, an unknown key, a value of the
   wrong JSON kind and a value outside the option's allowed set all fail the run, and the error names the
   config file, the JSON path and — when one is close — the key that was probably meant. Previously a
@@ -24,6 +31,12 @@ What changed per release, newest first.
   unset field following the OS has to say so now.
 - `sync` applies the configured ending to a file whose keys are already in sync instead of leaving it
   with the endings it happened to have, so `sync` and `gen` agree about the bytes of a tree.
+- `check` fails on a catalog whose line endings are not the declared ones, default locale included. The
+  drift used to surface only when something happened to rewrite the file, which meant it could sit in
+  the tree and then arrive inside an unrelated commit.
+- `gen` exits with code 1 when it had to skip a project, instead of printing `Skipped:` and reporting
+  success. A batch that skipped a project has not done its job, and CI cannot tell the difference
+  otherwise.
 - `init`'s scaffold carries every option: it now includes the `coordinator` group (it omitted two keys
   the reader accepted), and it writes `locale.sourceDir` with a forward slash so the same config
   resolves on every OS.

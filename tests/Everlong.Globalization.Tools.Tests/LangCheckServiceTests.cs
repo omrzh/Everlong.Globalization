@@ -12,6 +12,48 @@ public class LangCheckServiceTests : IDisposable
     return path;
   }
 
+  /// <summary>
+  ///   A catalog whose ending is not the declared one fails <c>check</c>, default locale included:
+  ///   nothing else rewrites that directory, so a drift there would never be noticed.
+  /// </summary>
+  [Fact]
+  public void CheckLineEndings_ReportsEveryCatalogThatDrifts()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var frDir = Path.Combine(sourceDir, "fr");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(frDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), "{\r\n  \"Hello\": \"Hello\"\r\n}");
+    File.WriteAllText(Path.Combine(frDir, "app.json"), """{ "Hello": "Bonjour" }""");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
+
+    var issues = service.CheckLineEndings(csproj);
+
+    var issue = Assert.Single(issues);
+    Assert.Contains("en/app.json", issue);
+    Assert.Contains("crlf", issue);
+    Assert.Contains("expected lf", issue);
+  }
+
+  [Fact]
+  public void CheckLineEndings_ConsistentTree_ReportsNothing()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    Directory.CreateDirectory(enDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
+
+    Assert.Empty(service.CheckLineEndings(csproj));
+  }
+
   private static string WriteCsproj(string dir, string sourceDir, string defaultLocale = "en")
   {
     var i18nJsonRelPath = Path.Combine(sourceDir, "i18n.json");
