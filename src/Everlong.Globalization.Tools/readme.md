@@ -86,27 +86,39 @@ dotnet elg sync [locale] [--project <csproj>]
 
 Adds missing keys (with default values from the default locale) to locale
 files and re-orders keys to match the default locale. Preserves existing
-translations. When `locale` is omitted, syncs all non-default locales.
+translations; a file whose keys are already in sync but whose line endings are
+not the configured ones is rewritten as well. When `locale` is omitted, syncs
+all non-default locales.
 
 ---
 
 ## Configuration
 
-The `i18n.jsonc` file controls code generation:
+The `i18n.jsonc` file controls code generation. `dotnet elg init` writes the
+full set with each option's contract as a comment above the key:
 
 ```jsonc
 {
   "locale": {
     "default": "en",
-    "sourceDir": "Properties\\i18n"
+    "sourceDir": "Properties/i18n"
   },
   "output": {
     "dir": "Properties",
     "namespace": "MyApp.Properties",
-    "className": "Lang"
+    "className": "Lang",
+    "lineEnding": "lf"   // "lf" (default) | "crlf" | "platform"
   }
 }
 ```
+
+The config is read strictly: an unknown group, an unknown key, a value of the
+wrong JSON kind and a value outside the allowed set each fail the run and name
+the file, the JSON path and — when one is close — the key that was probably
+meant. Locale files are the opposite: any key inside one is a string entry.
+
+`output.lineEnding` defaults to `"lf"`, so regeneration is byte-identical on
+every platform; declare `"crlf"` or `"platform"` when the repository needs them.
 
 Full reference: [github.com/omrzh/Everlong.Globalization](https://github.com/omrzh/Everlong.Globalization)
 

@@ -90,7 +90,10 @@ public class LangInitServiceTests : IDisposable
     Assert.Contains("\"localesPartial\"", template);
     Assert.Contains("\"sectionsPartial\"", template);
     Assert.Contains("\"lineEnding\"", template);
-    Assert.Contains("\"platform\"", template);
+    Assert.Contains("\"lf\"", template);
+    // The coordinator group used to be missing from the scaffold while the reader accepted it.
+    Assert.Contains("\"coordinator\"", template);
+    Assert.Contains("\"manifests\"", template);
     Assert.Contains("true", template);
     Assert.Contains("false", template);
   }
@@ -109,7 +112,7 @@ public class LangInitServiceTests : IDisposable
 
     Assert.Equal("MyApp.Properties", config.Namespace);
     Assert.Equal("en", config.DefaultLocale);
-    Assert.Equal("platform", config.LineEnding);
+    Assert.Equal("lf", config.LineEnding);
   }
 
   [Fact]

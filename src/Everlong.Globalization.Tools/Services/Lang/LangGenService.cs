@@ -26,10 +26,11 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
         WriteSkipped(csprojPath);
         WriteReason(ex.Message);
       }
-      catch (Exception ex)
+      catch (Exception)
       {
+        // The reason is printed once, by the root that knows how to end the process: a second copy
+        // here (or a stack trace) would bury the one line that says what to fix.
         WriteFailed(csprojPath);
-        WriteReason(ex.Message);
         throw;
       }
     }

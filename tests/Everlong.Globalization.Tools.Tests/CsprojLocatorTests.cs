@@ -93,6 +93,17 @@ public class CsprojLocatorTests : IDisposable
       """);
   }
 
+  /// <summary>
+  ///   Writes an i18n.json verbatim, so a test can hand the parser a config shape the tool must reject.
+  /// </summary>
+  private static string WriteRawConfig(string dir, string body)
+  {
+    var sourceDir = Path.Combine(dir, "Properties", "i18n");
+    Directory.CreateDirectory(sourceDir);
+    File.WriteAllText(Path.Combine(sourceDir, "i18n.json"), body);
+    return WriteCsproj(dir, "<Elg>true</Elg>");
+  }
+
   [Fact]
   public void FindCsproj_InSameDir()
   {
@@ -427,18 +438,18 @@ public class CsprojLocatorTests : IDisposable
   }
 
   [Fact]
-  public void ReadConfig_LineEnding_DefaultIsPlatform_WhenAbsent()
+  public void ReadConfig_LineEnding_DefaultIsLf_WhenAbsent()
   {
     var dir = CreateTempDir();
     var csproj = WriteCsproj(dir, "<RootNamespace>MyApp</RootNamespace>");
 
     var config = new CsprojLocator().ReadConfig(csproj);
 
-    Assert.Equal("platform", config.LineEnding);
+    Assert.Equal("lf", config.LineEnding);
   }
 
   [Fact]
-  public void ReadConfig_LineEnding_DefaultIsPlatform_WhenNull()
+  public void ReadConfig_LineEnding_DefaultIsLf_WhenNull()
   {
     var dir = CreateTempDir();
     WriteI18nConfigWithLineEnding(Path.Combine(dir, "Properties", "i18n"), "null");
@@ -446,7 +457,7 @@ public class CsprojLocatorTests : IDisposable
 
     var config = new CsprojLocator().ReadConfig(csproj);
 
-    Assert.Equal("platform", config.LineEnding);
+    Assert.Equal("lf", config.LineEnding);
   }
 
   [Fact]
@@ -472,6 +483,140 @@ public class CsprojLocatorTests : IDisposable
     var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
 
     Assert.Contains("output.lineEnding", ex.Message);
+  }
+
+  // ── The reader validates the config against the option table ──────────────
+  //
+  // Each miss below used to read as "the key is not there": a typo left the option at its default,
+  // a wrong kind was dropped outright for the booleans and crashed inside GetString for the strings.
+  // They now fail the run and name the file, the JSON path and, where one is close, the key meant.
+
+  [Fact]
+  public void ReadConfig_UnknownGroup_NamesTheFileAndTheNearestGroup()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """
+      { "outputs": { "dir": "Properties" } }
+      """);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("i18n.json", ex.Message);
+    Assert.Contains("unknown group 'outputs'", ex.Message);
+    Assert.Contains("Did you mean 'output'?", ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_UnknownKey_NamesTheJsonPathAndTheNearestKey()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """
+      { "output": { "lineEndings": "lf" } }
+      """);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("i18n.json", ex.Message);
+    Assert.Contains("unknown key 'output.lineEndings'", ex.Message);
+    Assert.Contains("Did you mean 'output.lineEnding'?", ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_KeyInTheWrongGroup_PointsAtTheOptionItMeant()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """
+      { "types": { "className": "Lang" } }
+      """);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("unknown key 'types.className'", ex.Message);
+    Assert.Contains("Did you mean 'output.className'?", ex.Message);
+  }
+
+  [Theory]
+  [InlineData("""{ "codegen": { "xmlDoc": "yes" } }""", "'codegen.xmlDoc' must be a boolean", "\"yes\"")]
+  [InlineData("""{ "locale": { "default": 5 } }""", "'locale.default' must be a string", "5")]
+  [InlineData("""{ "codegen": { "globalizationNamespace": 5 } }""", "'codegen.globalizationNamespace' must be a string", "5")]
+  [InlineData("""{ "output": { "dir": { "nested": true } } }""", "'output.dir' must be a string", "an object")]
+  [InlineData("""{ "coordinator": { "manifests": "Nester.Lang" } }""", "'coordinator.manifests' must be an array of strings", "\"Nester.Lang\"")]
+  [InlineData("""{ "coordinator": { "manifests": ["Nester.Lang", 5] } }""", "'coordinator.manifests[1]' must be a string", "5")]
+  public void ReadConfig_WrongJsonKind_Throws(string body, string expected, string actual)
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, body);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("i18n.json", ex.Message);
+    Assert.Contains(expected, ex.Message);
+    Assert.Contains(actual, ex.Message);
+  }
+
+  [Theory]
+  [InlineData("""{ "types": { "classVisibility": "privte" } }""", "'types.classVisibility'", "\"privte\"", "\"internal\"")]
+  // A visibility value lands verbatim in the generated declaration, so it is matched exactly —
+  // unlike output.lineEnding, which is a token of the tool's own vocabulary.
+  [InlineData("""{ "types": { "memberVisibility": "Public" } }""", "'types.memberVisibility'", "\"Public\"", "\"public\"")]
+  [InlineData("""{ "output": { "lineEnding": "unix" } }""", "'output.lineEnding'", "\"unix\"", "\"platform\"")]
+  public void ReadConfig_UnknownValue_Throws(string body, string optionPath, string value, string allowed)
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, body);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("i18n.json", ex.Message);
+    Assert.Contains(optionPath, ex.Message);
+    Assert.Contains(value, ex.Message);
+    Assert.Contains(allowed, ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_BlankManifest_Throws()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """
+      { "coordinator": { "manifests": ["Nester.Lang", " "] } }
+      """);
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("'coordinator.manifests[1]'", ex.Message);
+    Assert.Contains("blank", ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_RootIsNotAnObject_Throws()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """[ "locale" ]""");
+
+    var ex = Assert.Throws<InvalidLangConfigException>(() => new CsprojLocator().ReadConfig(csproj));
+
+    Assert.Contains("root must be a JSON object", ex.Message);
+    Assert.Contains("an array", ex.Message);
+  }
+
+  [Fact]
+  public void ReadConfig_ExplicitNull_IsTreatedAsAbsent()
+  {
+    var dir = CreateTempDir();
+    var csproj = WriteRawConfig(dir, """
+      {
+        "types": { "suffix": null },
+        "codegen": { "xmlDoc": null, "localesPartial": null },
+        "coordinator": { "manifests": null }
+      }
+      """);
+
+    var config = new CsprojLocator().ReadConfig(csproj);
+
+    Assert.Equal("Strings", config.SectionTypeSuffix);
+    Assert.False(config.GenerateXmlDoc);
+    Assert.False(config.LocalesInPartialFile);
+    Assert.Empty(config.CoordinatorManifests);
   }
 
   [Fact]

@@ -113,6 +113,9 @@ is upstream and does not load a how-to about itself, so there is no `.agents/ski
 - ICU MessageFormat patterns stay on one line, camelCase variables, no HTML inside values.
 - Multi-assembly locale switching goes through `LangCoordinator` with `ChainedStringProvider` overlay; no secrets in i18n JSON (they ship to clients).
 - `dotnet elg check` must stay green (locales in sync); renaming a key = API change, needs regen + translation sync.
+- The `i18n.jsonc` surface lives in one table (`LangOptions` in `Everlong.Globalization.Tools`): the
+  reader validates against it, `init`'s scaffold and the option lists in the docs are driven from it. An
+  unknown key fails the run; locale files stay permissive (any key there is a string entry).
 
 ## Contribution gotchas
 

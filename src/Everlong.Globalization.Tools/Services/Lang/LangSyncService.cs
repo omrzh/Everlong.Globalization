@@ -61,12 +61,13 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
                      ?? Path.Combine(targetDir, EnsureJsonExtension(fileName));
 
     JsonObject? targetJson = null;
+    string? existingContent = null;
     if (File.Exists(targetFile))
     {
-      var targetContent = await File.ReadAllTextAsync(targetFile, ct);
-      if (reader.ReadWithMeta(targetContent).DataOnly)
+      existingContent = await File.ReadAllTextAsync(targetFile, ct);
+      if (reader.ReadWithMeta(existingContent).DataOnly)
         return;
-      targetJson = JsonNode.Parse(targetContent, null, JsoncOptions) as JsonObject;
+      targetJson = JsonNode.Parse(existingContent, null, JsoncOptions) as JsonObject;
     }
     targetJson ??= new JsonObject();
 
@@ -74,19 +75,24 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
     var originalNormalized = targetJson.ToJsonString(WriteOptions);
     var (rebuilt, addedCount) = ReconstructInOrder(defaultJson, targetJson);
     var rebuiltNormalized = rebuilt.ToJsonString(WriteOptions);
+    var desired = LineEndings.Apply(rebuiltNormalized, lineEnding);
 
-    // The decision to write compares the rebuilt content against what the file holds today, in the
-    // writer's own line endings — so a file that is already in sync stays untouched even when the
-    // configured ending differs from the one on disk.
-    if (rebuiltNormalized == originalNormalized)
+    // Two reasons to write: the keys moved, or the bytes are not the ones the option asks for.  The
+    // second one matters because `gen` already rewrites every file it owns with this ending, so a
+    // `sync` that skipped an ending-only difference would leave the two commands disagreeing about
+    // the same tree.
+    var keysChanged = rebuiltNormalized != originalNormalized;
+    if (!keysChanged && existingContent is not null && LineEndings.Uses(existingContent, lineEnding))
       return;
 
-    await File.WriteAllTextAsync(targetFile, LineEndings.Apply(rebuiltNormalized, lineEnding), ct);
+    await File.WriteAllTextAsync(targetFile, desired, ct);
 
     if (addedCount > 0)
       Console.WriteLine($"  {locale}/{fileName}: {addedCount} key(s) added");
-    else
+    else if (keysChanged)
       Console.WriteLine($"  {locale}/{fileName}: re-ordered");
+    else
+      Console.WriteLine($"  {locale}/{fileName}: line endings normalized to {lineEnding}");
   }
 
   /// <summary>

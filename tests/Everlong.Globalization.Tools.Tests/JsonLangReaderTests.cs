@@ -183,6 +183,22 @@ public class JsonLangReaderTests
     Assert.Single(result.Nodes);
   }
 
+  /// <summary>
+  ///   The opposite contract to <c>i18n.jsonc</c>: a locale file holds content, so any key is a
+  ///   legitimate string entry and a key that looks like a config option is just a string.
+  /// </summary>
+  [Fact]
+  public void ReadWithMeta_UnknownKeys_AreEntries_NotConfiguration()
+  {
+    var json = """{ "$KeyPrefix": "App", "unknownOption": "text", "lineEndings": "unix" }""";
+    var result = _reader.ReadWithMeta(json);
+
+    Assert.Equal("App", result.KeyPrefix);
+    Assert.Equal(2, result.Nodes.Count);
+    Assert.Equal("text", result.Nodes.Single(node => node.Key == "unknownOption").Value);
+    Assert.Equal("unix", result.Nodes.Single(node => node.Key == "lineEndings").Value);
+  }
+
   [Fact]
   public void NestedObject_WithKeyPrefixOverride_RenamesNode()
   {

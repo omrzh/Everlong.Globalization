@@ -28,6 +28,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <!-- The option table, the config reader and the line-ending resolution are internals; the test
+       suite pins them (the scaffold's key set, the docs' key set, the four config miss classes). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Everlong.Globalization.Tools.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="\"/>
     <None Include="readme.md" Pack="true" PackagePath="\"/>

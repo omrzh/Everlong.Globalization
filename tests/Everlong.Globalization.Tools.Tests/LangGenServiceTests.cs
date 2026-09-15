@@ -386,7 +386,7 @@ public class LangGenServiceTests : IDisposable
   }
 
   [Fact]
-  public async Task LineEnding_NotConfigured_WritesPlatformNewLines()
+  public async Task LineEnding_NotConfigured_WritesLfOnly()
   {
     var dir = CreateTempDir();
     var localeDir = Path.Combine(dir, "i18n", "en");
@@ -396,6 +396,24 @@ public class LangGenServiceTests : IDisposable
       """);
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
+    LineEndingAssertions.AssertOnly(content, "\n");
+  }
+
+  [Fact]
+  public async Task LineEnding_Platform_WritesPlatformNewLines()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    Directory.CreateDirectory(localeDir);
+    File.WriteAllText(Path.Combine(localeDir, "app.json"), """
+      { "Title": "My App", "Nav": { "Home": "Home" } }
+      """);
+
+    var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang", lineEnding: "platform");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
     await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 

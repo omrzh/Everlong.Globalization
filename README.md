@@ -201,7 +201,7 @@ Checks every non-default locale against the default for missing and orphan keys.
 dotnet elg sync [locale] [--project <csproj>]
 ```
 
-Adds missing keys (with default values) to locale files and re-orders keys to match the default locale. Preserves existing translations. When `locale` is omitted, syncs all non-default locales.
+Adds missing keys (with default values) to locale files and re-orders keys to match the default locale. Preserves existing translations. A file whose keys are already in sync but whose line endings are not the configured ones is rewritten too, so `sync` and `gen` agree about the bytes. When `locale` is omitted, syncs all non-default locales.
 
 ---
 
@@ -219,7 +219,7 @@ The `i18n.jsonc` (or `.json`) file controls code generation:
     "dir": "Properties",
     "namespace": "MyApp.Properties",
     "className": "Lang",
-    "lineEnding": "platform"
+    "lineEnding": "lf"
   },
   "types": {
     "classVisibility": "public",
@@ -233,14 +233,29 @@ The `i18n.jsonc` (or `.json`) file controls code generation:
     "globalizationNamespace": "Everlong.Globalization",
     "localesPartial": false,
     "sectionsPartial": false
+  },
+  "coordinator": {
+    "generate": false,
+    "manifests": []
   }
 }
 ```
 
+Every key is optional; the sample shows all of them at their defaults. `dotnet elg init` writes the same
+set with the option's contract as a comment above each key.
+
+The config is read strictly: an unknown group, an unknown key, a value of the wrong JSON kind and a
+value outside the allowed set each fail the run and name the file, the JSON path and — when one is close
+— the key that was probably meant. That gives up forward compatibility on purpose: a config carrying an
+option the installed tool predates fails here rather than being half-read, so a repository is told to
+update `dotnet-elg` instead of silently getting bytes another machine would not produce. Locale files
+keep the opposite contract — any key inside one is a string entry, not configuration.
+
 `output.lineEnding` decides the bytes of every file the tool writes — the generated `Lang*.g.cs` files
-and the locale JSON that `sync` rewrites: `"lf"`, `"crlf"`, or `"platform"` (the default) to follow the
-convention of the running OS. Set it to the `end_of_line` your `.editorconfig` already declares, so
-regenerating on any platform leaves the working tree unchanged.
+and the locale JSON that `sync` rewrites: `"lf"` (the default), `"crlf"`, or `"platform"` to follow the
+convention of the running OS. The default is deterministic, so regenerating on any platform leaves the
+working tree unchanged; declare `"platform"` only when the repository wants the machine's convention.
+The tool never reads `.editorconfig` or `.gitattributes`.
 
 ---
 

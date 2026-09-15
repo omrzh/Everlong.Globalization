@@ -18,4 +18,4 @@ public record LangConfig(
   bool GenerateCoordinator,
   IReadOnlyList<string> CoordinatorManifests,
   string GlobalizationNamespace = "Everlong.Globalization",
-  string LineEnding = LineEndings.Platform);
+  string LineEnding = LineEndings.Lf);

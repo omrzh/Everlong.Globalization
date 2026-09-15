@@ -290,7 +290,7 @@ public class LangSyncServiceTests : IDisposable
   }
 
   [Fact]
-  public async Task LineEnding_NotConfigured_SyncedFileUsesPlatformNewLines()
+  public async Task LineEnding_NotConfigured_SyncedFileUsesLfOnly()
   {
     var dir = CreateTempDir();
     var sourceDir = Path.Combine(dir, "i18n");
@@ -305,7 +305,85 @@ public class LangSyncServiceTests : IDisposable
     await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"), TestContext.Current.CancellationToken);
+    LineEndingAssertions.AssertOnly(content, "\n");
+  }
+
+  [Fact]
+  public async Task LineEnding_Platform_SyncedFileUsesPlatformNewLines()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello", "Bye": "Goodbye" }""");
+    File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
+
+    var csproj = WriteCsproj(dir, "i18n", lineEnding: "platform");
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, Environment.NewLine);
+  }
+
+  /// <summary>
+  ///   A file whose keys are already in sync is still rewritten when its bytes are not the ones the
+  ///   option asks for: <c>gen</c> owns the ending of everything it writes, and a <c>sync</c> that
+  ///   skipped this difference would leave one tree with two answers.
+  /// </summary>
+  [Fact]
+  public async Task LineEnding_Lf_NormalizesAnInSyncFileThatIsCrlf()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+    File.WriteAllText(
+      Path.Combine(zhDir, "app.json"),
+      "{\r\n  \"Hello\": \"你好\"\r\n}");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
+
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"), TestContext.Current.CancellationToken);
+    Assert.Contains("你好", content); // the translation survived the rewrite
+    LineEndingAssertions.AssertOnly(content, "\n");
+  }
+
+  /// <summary>
+  ///   The other half of the same rule: a file that already holds the keys and the configured ending
+  ///   is left alone, so a second <c>sync</c> over an untouched repository writes nothing.
+  /// </summary>
+  [Fact]
+  public async Task LineEnding_Lf_LeavesAnInSyncFileUntouched()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+    File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "\u4f60\u597d" }""");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    using var writer = new StringWriter();
+    var oldOut = Console.Out;
+    Console.SetOut(writer);
+    try
+    {
+      await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
+    }
+    finally
+    {
+      Console.SetOut(oldOut);
+    }
+
+    Assert.DoesNotContain("app.json", writer.ToString());
   }
 
   [Fact]

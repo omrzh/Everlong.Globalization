@@ -16,7 +16,7 @@ per-project contribution rules. `AGENTS.md` points here for structure.*
 
 # Repository root
 
-- `EverlongGlobalizationVersion.props` is the single source of the version — `GlobalizationVersion` = **0.1.0**
+- `EverlongGlobalizationVersion.props` is the single source of the version — `GlobalizationVersion` = **0.2.1**
   (`Version` / `FileVersion` / `AssemblyVersion` derive from it).
 - `Everlong.Globalization.slnx` lists the 2 `src/` projects and the 2 `tests/` projects.
 - `README.md` is the repo landing page / consumer readme. Each `src/` project packs its **own** `readme.md`
@@ -51,7 +51,13 @@ only sanctioned way to generate `Lang.g.cs` — never hand-write the generated f
 `net8.0`, `OutputType=Exe`, `PackageId Everlong.Globalization.Tools`, `PackAsTool=true`,
 `ToolCommandName=dotnet-elg`, packable. The one external dependency is `System.CommandLine`
 `2.0.0-beta4.22272.1` (beta by design — the CLI is a tool, not a library). `NoWarn` adds `CS1591;CS1573`
-(the CLI surface is not a documented API).
+(the CLI surface is not a documented API). `InternalsVisibleTo` points at the test project, which pins
+the internals below.
+
+The `i18n.jsonc` surface is one table — `Services/Lang/Models/LangOptions.cs` (group, key, JSON kind,
+allowed values, default, doc comment). `LangConfigFileReader` validates a config against it,
+`LangConfigTemplate` renders `init`'s scaffold from it, `LineEndings` resolves its one value token, and
+`LangOptionsTests` compares the docs' key sets to it.
 
 ---
 

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Xml.Linq;
 using Everlong.Globalization.Tools.Services.Lang.Models;
 
@@ -108,7 +107,7 @@ public class CsprojLocator
     var absConfigFile = Path.GetFullPath(Path.Combine(csprojDir, relConfigFile));
     var configFileDir = Path.GetDirectoryName(absConfigFile)!;
 
-    var i18nConfig = ReadI18nFileConfig(absConfigFile);
+    var i18nConfig = LangConfigFileReader.Read(absConfigFile);
 
     var neutralLanguage = xml.Descendants("PropertyGroup")
       .Elements("NeutralLanguage").FirstOrDefault()?.Value?.Trim();
@@ -129,31 +128,19 @@ public class CsprojLocator
     var relOutput = Path.GetRelativePath(csprojDir, absOutput);
     var ns = i18nConfig.Namespace ?? DeriveNamespace(csprojPath, xml, relOutput);
 
-    var className = i18nConfig.ClassName ?? "Lang";
-    var classVisibility = i18nConfig.ClassVisibility ?? "public";
-    var memberVisibility = i18nConfig.MemberVisibility ?? "public";
-    var generateXmlDoc = i18nConfig.GenerateXmlDoc ?? false;
-    var generateFormatMethod = i18nConfig.GenerateFormatMethod ?? true;
+    var className = i18nConfig.ClassName ?? LangOptions.Text("output.className");
+    var classVisibility = i18nConfig.ClassVisibility ?? LangOptions.Text("types.classVisibility");
+    var memberVisibility = i18nConfig.MemberVisibility ?? LangOptions.Text("types.memberVisibility");
+    var generateXmlDoc = i18nConfig.GenerateXmlDoc ?? LangOptions.Flag("codegen.xmlDoc");
+    var generateFormatMethod = i18nConfig.GenerateFormatMethod ?? LangOptions.Flag("codegen.formattingMethod");
     var localesVisibility = i18nConfig.LocalesVisibility ?? memberVisibility;
-    var localesInPartialFile = i18nConfig.LocalesInPartialFile ?? false;
-    var sectionClassesInPartialFiles = i18nConfig.SectionClassesInPartialFiles ?? false;
-    var sectionTypeSuffix = i18nConfig.SectionTypeSuffix ?? "Strings";
-    var generateCoordinator = i18nConfig.GenerateCoordinator ?? false;
+    var localesInPartialFile = i18nConfig.LocalesInPartialFile ?? LangOptions.Flag("codegen.localesPartial");
+    var sectionClassesInPartialFiles = i18nConfig.SectionClassesInPartialFiles ?? LangOptions.Flag("codegen.sectionsPartial");
+    var sectionTypeSuffix = i18nConfig.SectionTypeSuffix ?? LangOptions.Text("types.suffix");
+    var generateCoordinator = i18nConfig.GenerateCoordinator ?? LangOptions.Flag("coordinator.generate");
     var coordinatorManifests = i18nConfig.CoordinatorManifests ?? [];
-    var globalizationNamespace = i18nConfig.GlobalizationNamespace ?? "Everlong.Globalization";
-    var lineEnding = NormalizeLineEnding(i18nConfig.LineEnding, absConfigFile);
-
-    if (memberVisibility == "public" && classVisibility == "internal")
-      throw new InvalidLangConfigException(
-        $"Invalid i18n config in '{absConfigFile}': " +
-        "memberVisibility cannot be \"public\" when classVisibility is \"internal\". " +
-        "Public members on an internal class are inaccessible to consumers.");
-
-    if (localesVisibility == "public" && classVisibility == "internal")
-      throw new InvalidLangConfigException(
-        $"Invalid i18n config in '{absConfigFile}': " +
-        "localesVisibility cannot be \"public\" when classVisibility is \"internal\". " +
-        "Public members on an internal class are inaccessible to consumers.");
+    var globalizationNamespace = i18nConfig.GlobalizationNamespace ?? LangOptions.Text("codegen.globalizationNamespace");
+    var lineEnding = i18nConfig.LineEnding ?? LangOptions.Text("output.lineEnding");
 
     return new LangConfig(
       csprojPath,
@@ -174,24 +161,6 @@ public class CsprojLocator
       coordinatorManifests,
       globalizationNamespace,
       lineEnding);
-  }
-
-  /// <summary>
-  ///   Normalizes the <c>output.lineEnding</c> option to its canonical spelling, falling back to
-  ///   <see cref="LineEndings.Platform" /> when the config leaves it out. Anything else is a typo
-  ///   that would silently produce the wrong bytes, so it fails the run instead.
-  /// </summary>
-  private static string NormalizeLineEnding(string? configured, string configFile)
-  {
-    var value = configured?.Trim().ToLowerInvariant();
-    if (string.IsNullOrEmpty(value))
-      return LineEndings.Platform;
-    if (value is "lf" or "crlf" or LineEndings.Platform)
-      return value;
-
-    throw new InvalidLangConfigException(
-      $"Invalid i18n config in '{configFile}': " +
-      $"output.lineEnding must be \"lf\", \"crlf\" or \"{LineEndings.Platform}\", but was \"{configured}\".");
   }
 
   internal static string DeriveNamespace(string csprojPath, XDocument xml, string outputDir = "Properties")
@@ -231,118 +200,7 @@ public class CsprojLocator
       return [];
     }
   }
-
-  private static readonly JsonDocumentOptions JsoncOptions = new()
-  {
-    CommentHandling = JsonCommentHandling.Skip
-  };
-
-  internal static I18nFileConfig ReadI18nFileConfig(string path)
-  {
-    if (!File.Exists(path))
-      return new I18nFileConfig();
-    using var doc = JsonDocument.Parse(File.ReadAllText(path), JsoncOptions);
-    var root = doc.RootElement;
-
-    string? ns = null, defaultLocale = null, outputDir = null, sourceDir = null,
-            className = null, classVisibility = null, memberVisibility = null,
-            localesVisibility = null, globalizationNamespace = null, lineEnding = null;
-    bool? generateXmlDoc = null, generateFormatMethod = null;
-    bool? localesInPartialFile = null, sectionClassesInPartialFiles = null;
-    string? sectionTypeSuffix = null;
-    bool? generateCoordinator = null;
-    IReadOnlyList<string>? coordinatorManifests = null;
-
-    if (root.TryGetProperty("locale", out var localeGroup) && localeGroup.ValueKind == JsonValueKind.Object)
-    {
-      if (localeGroup.TryGetProperty("default", out var lgDefault))
-        defaultLocale = lgDefault.GetString();
-      if (localeGroup.TryGetProperty("sourceDir", out var lgSourceDir))
-        sourceDir = lgSourceDir.GetString();
-    }
-
-    if (root.TryGetProperty("output", out var outputGroup) && outputGroup.ValueKind == JsonValueKind.Object)
-    {
-      if (outputGroup.TryGetProperty("dir", out var ogDir))
-        outputDir = ogDir.GetString();
-      if (outputGroup.TryGetProperty("namespace", out var ogNs))
-        ns = ogNs.GetString();
-      if (outputGroup.TryGetProperty("className", out var ogCn))
-        className = ogCn.GetString();
-      if (outputGroup.TryGetProperty("lineEnding", out var ogLe))
-        lineEnding = ogLe.ValueKind switch
-        {
-          JsonValueKind.String => ogLe.GetString(),
-          JsonValueKind.Null => null,
-          // Keep the raw token so the validation error quotes what the file actually says.
-          _ => ogLe.GetRawText()
-        };
-    }
-
-    if (root.TryGetProperty("types", out var typesGroup) && typesGroup.ValueKind == JsonValueKind.Object)
-    {
-      if (typesGroup.TryGetProperty("classVisibility", out var tgCv))
-        classVisibility = tgCv.GetString();
-      if (typesGroup.TryGetProperty("memberVisibility", out var tgMv))
-        memberVisibility = tgMv.GetString();
-      if (typesGroup.TryGetProperty("localesVisibility", out var tgLv))
-        localesVisibility = tgLv.GetString();
-      if (typesGroup.TryGetProperty("suffix", out var tgSuffix))
-        sectionTypeSuffix = tgSuffix.GetString();
-    }
-
-    if (root.TryGetProperty("codegen", out var codegenGroup) && codegenGroup.ValueKind == JsonValueKind.Object)
-    {
-      if (codegenGroup.TryGetProperty("xmlDoc", out var cgXd) && cgXd.ValueKind is JsonValueKind.False or JsonValueKind.True)
-        generateXmlDoc = cgXd.GetBoolean();
-      if (codegenGroup.TryGetProperty("formattingMethod", out var cgFm) && cgFm.ValueKind is JsonValueKind.False or JsonValueKind.True)
-        generateFormatMethod = cgFm.GetBoolean();
-      if (codegenGroup.TryGetProperty("localesPartial", out var cgLp) && cgLp.ValueKind is JsonValueKind.False or JsonValueKind.True)
-        localesInPartialFile = cgLp.GetBoolean();
-      if (codegenGroup.TryGetProperty("sectionsPartial", out var cgSp) && cgSp.ValueKind is JsonValueKind.False or JsonValueKind.True)
-        sectionClassesInPartialFiles = cgSp.GetBoolean();
-      if (codegenGroup.TryGetProperty("globalizationNamespace", out var cgGn) && cgGn.ValueKind == JsonValueKind.String)
-        globalizationNamespace = cgGn.GetString();
-    }
-
-    if (root.TryGetProperty("coordinator", out var coordGroup) && coordGroup.ValueKind == JsonValueKind.Object)
-    {
-      if (coordGroup.TryGetProperty("generate", out var cgGen) && cgGen.ValueKind is JsonValueKind.False or JsonValueKind.True)
-        generateCoordinator = cgGen.GetBoolean();
-      if (coordGroup.TryGetProperty("manifests", out var cgManifests) && cgManifests.ValueKind == JsonValueKind.Array)
-      {
-        coordinatorManifests = cgManifests.EnumerateArray()
-          .Where(e => e.ValueKind == JsonValueKind.String)
-          .Select(e => e.GetString()!)
-          .Where(s => !string.IsNullOrWhiteSpace(s))
-          .ToList();
-      }
-    }
-
-    return new I18nFileConfig(
-      ns, defaultLocale, outputDir, sourceDir, className, classVisibility, memberVisibility, generateXmlDoc, generateFormatMethod, localesVisibility,
-      localesInPartialFile, sectionClassesInPartialFiles, sectionTypeSuffix, generateCoordinator, coordinatorManifests, globalizationNamespace, lineEnding);
-  }
 }
-
-internal record I18nFileConfig(
-  string? Namespace = null,
-  string? DefaultLocale = null,
-  string? OutputDir = null,
-  string? SourceDir = null,
-  string? ClassName = null,
-  string? ClassVisibility = null,
-  string? MemberVisibility = null,
-  bool? GenerateXmlDoc = null,
-  bool? GenerateFormatMethod = null,
-  string? LocalesVisibility = null,
-  bool? LocalesInPartialFile = null,
-  bool? SectionClassesInPartialFiles = null,
-  string? SectionTypeSuffix = null,
-  bool? GenerateCoordinator = null,
-  IReadOnlyList<string>? CoordinatorManifests = null,
-  string? GlobalizationNamespace = null,
-  string? LineEnding = null);
 
 public class NoCsprojFoundException(string message) : Exception(message);
 public class MissingLangConfigException(string csprojPath, string property)
