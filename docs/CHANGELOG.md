@@ -2,7 +2,7 @@
 
 What changed per release, newest first.
 
-## Unreleased
+## 0.2.0 — 2026-09-15
 
 ### Added
 

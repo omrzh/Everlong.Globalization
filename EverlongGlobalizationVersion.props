@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <GlobalizationVersion>0.1.0</GlobalizationVersion>
+    <GlobalizationVersion>0.2.0</GlobalizationVersion>
     <Version>$(GlobalizationVersion)</Version>
     <FileVersion>$(GlobalizationVersion)</FileVersion>
     <AssemblyVersion>$(GlobalizationVersion)</AssemblyVersion>
