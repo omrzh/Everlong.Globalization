@@ -81,11 +81,11 @@ public class LangGenServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     var outputPath = Path.Combine(dir, "Generated", "Lang.g.cs");
     Assert.True(File.Exists(outputPath));
-    var content = await File.ReadAllTextAsync(outputPath);
+    var content = await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken);
     Assert.Contains("public static AppStrings App", content);
     Assert.Contains("public static NavStrings Nav", content);
     Assert.Contains("class AppStrings", content);
@@ -109,9 +109,9 @@ public class LangGenServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     Assert.Contains("Locales.En", content);
     Assert.Contains("IStringProvider ZhCn", content);
     Assert.Contains("\"My App\"", content);
@@ -135,9 +135,9 @@ public class LangGenServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     Assert.Contains("\"App.Title\"", content);
     Assert.Contains("GetString(\"Title\",", content);
     Assert.DoesNotContain("AppStringsStrings", content);
@@ -161,9 +161,9 @@ public class LangGenServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     Assert.Contains("\"Everlong.Nester.Dialog.Title\"", content);
     Assert.DoesNotContain("\"Nester.Dialog.Title\"", content);
   }
@@ -197,9 +197,9 @@ public class LangGenServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     Assert.DoesNotContain("class LangNester", content);
     Assert.DoesNotContain("public static LangNester Nester", content);
     Assert.Contains("\"Everlong.Nester.Dialog.Title\"", content);
@@ -216,7 +216,7 @@ public class LangGenServiceTests : IDisposable
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     var outputPath = Path.Combine(dir, "Generated", "Lang.g.cs");
     var attrs = File.GetAttributes(outputPath);
@@ -233,8 +233,8 @@ public class LangGenServiceTests : IDisposable
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj); // first gen
-    await service.RunAsync(csproj); // second gen — must not throw
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken); // first gen
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken); // second gen — must not throw
 
     var outputPath = Path.Combine(dir, "Generated", "Lang.g.cs");
     Assert.True(File.Exists(outputPath));
@@ -258,7 +258,7 @@ public class LangGenServiceTests : IDisposable
       localesPartial: true,
       sectionsPartial: true);
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     var mainPath = Path.Combine(dir, "Generated", "Lang.g.cs");
     var localesPath = Path.Combine(dir, "Generated", "Lang.Locales.g.cs");
@@ -268,9 +268,9 @@ public class LangGenServiceTests : IDisposable
     Assert.True(File.Exists(localesPath));
     Assert.True(File.Exists(appPath));
 
-    var main = await File.ReadAllTextAsync(mainPath);
-    var locales = await File.ReadAllTextAsync(localesPath);
-    var app = await File.ReadAllTextAsync(appPath);
+    var main = await File.ReadAllTextAsync(mainPath, TestContext.Current.CancellationToken);
+    var locales = await File.ReadAllTextAsync(localesPath, TestContext.Current.CancellationToken);
+    var app = await File.ReadAllTextAsync(appPath, TestContext.Current.CancellationToken);
 
     Assert.DoesNotContain("static class Locales", main);
     Assert.Contains("static class Locales", locales);
@@ -294,7 +294,7 @@ public class LangGenServiceTests : IDisposable
       localesPartial: true,
       sectionsPartial: true);
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     var splitLocalesPath = Path.Combine(dir, "Generated", "Lang.Locales.g.cs");
     var splitSectionPath = Path.Combine(dir, "Generated", "Lang.App.g.cs");
@@ -311,7 +311,7 @@ public class LangGenServiceTests : IDisposable
       }
       """);
 
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.False(File.Exists(splitLocalesPath));
     Assert.False(File.Exists(splitSectionPath));
@@ -340,9 +340,9 @@ public class LangGenServiceTests : IDisposable
       "MyApp.Lang",
       sectionTypeSuffix: "Section");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     Assert.Contains("public static AppSection App", content);
     Assert.Contains("sealed class AppSection", content);
     Assert.Contains("public AppDialogSection Dialog", content);
@@ -361,9 +361,9 @@ public class LangGenServiceTests : IDisposable
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang", lineEnding: "lf");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, "\n");
   }
 
@@ -379,9 +379,9 @@ public class LangGenServiceTests : IDisposable
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang", lineEnding: "crlf");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, "\r\n");
   }
 
@@ -397,9 +397,9 @@ public class LangGenServiceTests : IDisposable
 
     var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"));
+    var content = await File.ReadAllTextAsync(Path.Combine(dir, "Generated", "Lang.g.cs"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, Environment.NewLine);
   }
 
@@ -423,13 +423,13 @@ public class LangGenServiceTests : IDisposable
       sectionsPartial: true,
       lineEnding: "lf");
     var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
-    await service.RunAsync(csproj);
+    await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     var generatedDir = Path.Combine(dir, "Generated");
     var files = Directory.GetFiles(generatedDir, "*.g.cs");
     Assert.Equal(3, files.Length); // main + Locales + per-module section
     foreach (var file in files)
-      LineEndingAssertions.AssertOnly(await File.ReadAllTextAsync(file), "\n");
+      LineEndingAssertions.AssertOnly(await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken), "\n");
   }
 
   [Fact]
@@ -444,7 +444,7 @@ public class LangGenServiceTests : IDisposable
     Console.SetOut(sw);
     try
     {
-      await service.RunAsync(csproj);
+      await service.RunAsync(csproj, TestContext.Current.CancellationToken);
     }
     finally
     {
@@ -468,7 +468,7 @@ public class LangGenServiceTests : IDisposable
     Console.SetOut(sw);
     try
     {
-      await service.RunAsync(projectOverride: null);
+      await service.RunAsync(projectOverride: null, ct: TestContext.Current.CancellationToken);
     }
     finally
     {
@@ -503,7 +503,7 @@ public class LangGenServiceTests : IDisposable
     Directory.SetCurrentDirectory(root);
     try
     {
-      await service.RunAsync(projectOverride: null);
+      await service.RunAsync(projectOverride: null, ct: TestContext.Current.CancellationToken);
     }
     finally
     {
@@ -546,7 +546,7 @@ public class LangGenServiceTests : IDisposable
     Console.SetOut(sw);
     try
     {
-      await service.RunAsync(projectOverride: null);
+      await service.RunAsync(projectOverride: null, ct: TestContext.Current.CancellationToken);
     }
     finally
     {

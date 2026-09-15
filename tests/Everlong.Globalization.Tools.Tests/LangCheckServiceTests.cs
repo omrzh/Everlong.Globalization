@@ -51,7 +51,7 @@ public class LangCheckServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
 
-    var results = await service.RunAsync(csproj);
+    var results = await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.Single(results);
     Assert.Equal("fr", results[0].Locale);
@@ -75,7 +75,7 @@ public class LangCheckServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
 
-    var results = await service.RunAsync(csproj);
+    var results = await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.Single(results);
     var result = results[0];
@@ -99,7 +99,7 @@ public class LangCheckServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
 
-    var results = await service.RunAsync(csproj);
+    var results = await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.Single(results);
     var result = results[0];
@@ -126,7 +126,7 @@ public class LangCheckServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
 
-    var results = await service.RunAsync(csproj);
+    var results = await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.Single(results);
     Assert.Equal("fr", results[0].Locale);
@@ -156,7 +156,7 @@ public class LangCheckServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
 
-    var results = await service.RunAsync(csproj);
+    var results = await service.RunAsync(csproj, TestContext.Current.CancellationToken);
 
     Assert.Single(results);
     var result = results[0];

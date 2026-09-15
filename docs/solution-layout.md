@@ -62,6 +62,10 @@ only sanctioned way to generate `Lang.g.cs` — never hand-write the generated f
 - Everything runs on Linux and Windows; both projects are `net8.0` and `IsPackable=false`.
 - `Everlong.Globalization.Tests` is the runtime suite; `Everlong.Globalization.Tools.Tests` is the
   CLI + codegen suite and is snapshot-driven (Verify).
+- Every suite is **xunit v3** (`xunit.v3`, with `Verify.XunitV3` where a snapshot is verified) and the two
+  projects pin the same test stack. The xunit targets make a v3 test project an executable, so
+  `dotnet test` drives it through the VSTest adapter; a call that takes a `CancellationToken` is given
+  `TestContext.Current.CancellationToken` (`xUnit1051`).
 - Snapshot baselines live in `tests/Everlong.Globalization.Tools.Tests/Verified/` as `*.verified.txt`
   (one per test method). On a mismatch Verify writes a `*.received.txt` next to it; **diff-tool popups
   are disabled** (`DiffRunner.Disabled = true` in `ModuleInitializer.cs`) — read the `received` file.
@@ -72,8 +76,8 @@ only sanctioned way to generate `Lang.g.cs` — never hand-write the generated f
 # tests/Everlong.Globalization.Tests/
 
 The runtime behaviour suite (`GlobalizationTests.cs`). References `Everlong.Globalization` (project);
-packages: `xunit` 2.7.0, `Microsoft.NET.Test.Sdk` 17.9.0, `xunit.runner.visualstudio` 2.5.7,
-`coverlet.collector` 6.0.0.
+packages: `xunit.v3` 3.2.2, `Microsoft.NET.Test.Sdk` 17.14.1, `xunit.runner.visualstudio` 3.1.5,
+`coverlet.collector` 6.0.4.
 
 ---
 
@@ -82,8 +86,8 @@ packages: `xunit` 2.7.0, `Microsoft.NET.Test.Sdk` 17.9.0, `xunit.runner.visualst
 The CLI + codegen suite: `CodeGeneratorTests`, `CsprojLocatorTests`, `JsonLangReaderTests` and one test
 class per command service (`LangAddServiceTests`, `LangCheckServiceTests`, `LangGenServiceTests`,
 `LangInitServiceTests`, `LangSyncServiceTests`). References `Everlong.Globalization.Tools` (project);
-packages: `Verify.Xunit` 31.12.5, `xunit` 2.9.3, `Microsoft.NET.Test.Sdk` 17.12.0,
-`xunit.runner.visualstudio` 2.8.2, `coverlet.collector` 6.0.4. `GlobalUsings.cs` carries `using Xunit;`.
+packages: `Verify.XunitV3` 31.12.5, `xunit.v3` 3.2.2, `Microsoft.NET.Test.Sdk` 17.14.1,
+`xunit.runner.visualstudio` 3.1.5, `coverlet.collector` 6.0.4. `GlobalUsings.cs` carries `using Xunit;`.
 
 ---
 

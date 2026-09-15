@@ -53,7 +53,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(zhDir, "app.json")));
     var root = doc.RootElement;
@@ -74,7 +74,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好", "Bye": "再见" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(zhDir, "app.json")));
     var root = doc.RootElement;
@@ -95,7 +95,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Nav": { "Home": "首页" } }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(zhDir, "app.json")));
     var nav = doc.RootElement.GetProperty("Nav");
@@ -116,7 +116,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好", "Extra": "额外" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(zhDir, "app.json")));
     var root = doc.RootElement;
@@ -137,7 +137,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "C": "诶", "A": "啊", "B": "呗" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     var content = File.ReadAllText(Path.Combine(zhDir, "app.json"));
     var idxA = content.IndexOf("\"A\"");
@@ -160,7 +160,7 @@ public class LangSyncServiceTests : IDisposable
     // zh-CN dir exists but has no app.json
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     var targetFile = Path.Combine(zhDir, "app.json");
     Assert.True(File.Exists(targetFile));
@@ -183,7 +183,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "_ext.json"), extOriginal);
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
     Assert.Equal(extOriginal, File.ReadAllText(Path.Combine(zhDir, "_ext.json")));
   }
@@ -204,7 +204,7 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(frDir, "app.json"), """{ "Hello": "Bonjour" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync("zh-CN", csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync("zh-CN", csproj, TestContext.Current.CancellationToken);
 
     Assert.Contains("Goodbye", File.ReadAllText(Path.Combine(zhDir, "app.json")));
     Assert.DoesNotContain("Goodbye", File.ReadAllText(Path.Combine(frDir, "app.json")));
@@ -282,9 +282,9 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
 
     var csproj = WriteCsproj(dir, "i18n", lineEnding: "lf");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"));
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"), TestContext.Current.CancellationToken);
     Assert.Contains("Goodbye", content); // the file was rewritten, not skipped
     LineEndingAssertions.AssertOnly(content, "\n");
   }
@@ -302,9 +302,9 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(zhDir, "app.json"), """{ "Hello": "你好" }""");
 
     var csproj = WriteCsproj(dir, "i18n");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"));
+    var content = await File.ReadAllTextAsync(Path.Combine(zhDir, "app.json"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, Environment.NewLine);
   }
 
@@ -320,9 +320,9 @@ public class LangSyncServiceTests : IDisposable
     File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
 
     var csproj = WriteCsproj(dir, "i18n", lineEnding: "lf");
-    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj);
+    await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
 
-    var content = await File.ReadAllTextAsync(Path.Combine(frDir, "app.json"));
+    var content = await File.ReadAllTextAsync(Path.Combine(frDir, "app.json"), TestContext.Current.CancellationToken);
     LineEndingAssertions.AssertOnly(content, "\n");
   }
 

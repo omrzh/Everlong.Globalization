@@ -48,7 +48,7 @@ public class LangAddServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangAddService(new CsprojLocator());
 
-    await service.RunAsync("fr", csproj, force: false);
+    await service.RunAsync("fr", csproj, force: false, ct: TestContext.Current.CancellationToken);
 
     var frDir = Path.Combine(sourceDir, "fr");
     Assert.True(Directory.Exists(frDir));
@@ -70,10 +70,10 @@ public class LangAddServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangAddService(new CsprojLocator());
 
-    await service.RunAsync("zh-CN", csproj, force: false);
+    await service.RunAsync("zh-CN", csproj, force: false, ct: TestContext.Current.CancellationToken);
 
-    Assert.Equal(appContent, await File.ReadAllTextAsync(Path.Combine(sourceDir, "zh-CN", "app.json")));
-    Assert.Equal(navContent, await File.ReadAllTextAsync(Path.Combine(sourceDir, "zh-CN", "nav.json")));
+    Assert.Equal(appContent, await File.ReadAllTextAsync(Path.Combine(sourceDir, "zh-CN", "app.json"), TestContext.Current.CancellationToken));
+    Assert.Equal(navContent, await File.ReadAllTextAsync(Path.Combine(sourceDir, "zh-CN", "nav.json"), TestContext.Current.CancellationToken));
   }
 
   [Fact]
@@ -91,7 +91,7 @@ public class LangAddServiceTests : IDisposable
     var service = new LangAddService(new CsprojLocator());
 
     await Assert.ThrowsAsync<InvalidOperationException>(
-      () => service.RunAsync("fr", csproj, force: false));
+      () => service.RunAsync("fr", csproj, force: false, ct: TestContext.Current.CancellationToken));
   }
 
   [Fact]
@@ -110,9 +110,9 @@ public class LangAddServiceTests : IDisposable
     var csproj = WriteCsproj(dir, "i18n");
     var service = new LangAddService(new CsprojLocator());
 
-    await service.RunAsync("fr", csproj, force: true);
+    await service.RunAsync("fr", csproj, force: true, ct: TestContext.Current.CancellationToken);
 
-    Assert.Equal(newContent, await File.ReadAllTextAsync(Path.Combine(frDir, "app.json")));
+    Assert.Equal(newContent, await File.ReadAllTextAsync(Path.Combine(frDir, "app.json"), TestContext.Current.CancellationToken));
   }
 
   public void Dispose()

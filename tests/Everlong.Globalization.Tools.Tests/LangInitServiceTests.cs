@@ -32,13 +32,13 @@ public class LangInitServiceTests : IDisposable
     var csproj = WriteCsproj(dir);
     var service = new LangInitService(new CsprojLocator());
 
-    await service.RunAsync(csproj, "en");
+    await service.RunAsync(csproj, "en", TestContext.Current.CancellationToken);
 
     var i18nDir = Path.Combine(dir, "Properties", "i18n");
     var appJson = Path.Combine(i18nDir, "en", "App.json");
     Assert.True(Directory.Exists(i18nDir));
     Assert.True(File.Exists(appJson));
-    var content = await File.ReadAllTextAsync(appJson);
+    var content = await File.ReadAllTextAsync(appJson, TestContext.Current.CancellationToken);
     Assert.Contains("Title", content);
   }
 
@@ -49,11 +49,11 @@ public class LangInitServiceTests : IDisposable
     var csproj = WriteCsproj(dir);
     var service = new LangInitService(new CsprojLocator());
 
-    await service.RunAsync(csproj, "en");
+    await service.RunAsync(csproj, "en", TestContext.Current.CancellationToken);
 
     var configFile = Path.Combine(dir, "Properties", "i18n", "i18n.jsonc");
     Assert.True(File.Exists(configFile));
-    var content = await File.ReadAllTextAsync(configFile);
+    var content = await File.ReadAllTextAsync(configFile, TestContext.Current.CancellationToken);
     Assert.Contains("namespace", content);
     Assert.Contains("MyApp.Properties", content);
     Assert.Contains("locale", content);
@@ -102,7 +102,7 @@ public class LangInitServiceTests : IDisposable
     var csproj = WriteCsproj(dir);
     var service = new LangInitService(new CsprojLocator());
 
-    await service.RunAsync(csproj, "en");
+    await service.RunAsync(csproj, "en", TestContext.Current.CancellationToken);
 
     // The template ships every key, so it must survive the parser the tool itself uses.
     var config = new CsprojLocator().ReadConfig(csproj);
@@ -123,7 +123,7 @@ public class LangInitServiceTests : IDisposable
     File.WriteAllText(sentinel, "kept");
 
     var service = new LangInitService(new CsprojLocator());
-    await service.RunAsync(csproj, "en");
+    await service.RunAsync(csproj, "en", TestContext.Current.CancellationToken);
 
     Assert.True(File.Exists(sentinel));
     Assert.False(Directory.Exists(Path.Combine(i18nDir, "en")));
@@ -136,7 +136,7 @@ public class LangInitServiceTests : IDisposable
     var csproj = WriteCsproj(dir);
     var service = new LangInitService(new CsprojLocator());
 
-    await service.RunAsync(csproj, "zh-CN");
+    await service.RunAsync(csproj, "zh-CN", TestContext.Current.CancellationToken);
 
     Assert.True(Directory.Exists(Path.Combine(dir, "Properties", "i18n", "zh-CN")));
     Assert.True(File.Exists(Path.Combine(dir, "Properties", "i18n", "zh-CN", "App.json")));

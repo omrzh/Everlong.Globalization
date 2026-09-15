@@ -44,6 +44,11 @@ baseline (2-space indent, LF, file-scoped namespaces, `csharp_prefer_braces`, �
 
 - `dotnet test tests/Everlong.Globalization.Tests tests/Everlong.Globalization.Tools.Tests` — unit + codegen snapshot (Verify) tests. Keep them green; they are the release gate.
 - Changing generated output means promoting `.received.txt` to `.verified.txt` after reviewing the diff.
+- **Every suite is xunit v3** — `xunit.v3`, plus `Verify.XunitV3` where a snapshot is verified; the v2
+  packages (`xunit`, `Verify.Xunit`) are referenced nowhere. The xunit targets make a v3 test project an
+  *executable*, so `dotnet test` drives it through the VSTest adapter and the `.verified.txt` baselines
+  are untouched. A call that takes a `CancellationToken` gets `TestContext.Current.CancellationToken`
+  (`xUnit1051`), never a suppression.
 - Verify diff-tool popups are disabled (`DiffRunner.Disabled = true` in `ModuleInitializer.cs`) — on a
   snapshot mismatch, read the `*.received.*` file; no popup will appear.
 - Post-release smoke verification (from outside the repo, nuget.org only): `dotnet new console`, `dotnet add package Everlong.Globalization --version <v>`, add `LangVersion preview` for partial-property consumers, then `Lang.Provider.Use(...)` + `GetString` and run.
