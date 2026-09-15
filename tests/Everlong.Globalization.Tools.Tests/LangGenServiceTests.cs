@@ -1,5 +1,7 @@
 namespace Everlong.Globalization.Tools.Tests;
 
+/// <summary>Redirects <see cref="Console.Out" /> in places, so it runs in its own collection.</summary>
+[Collection(ConsoleOutputCollection.Name)]
 public class LangGenServiceTests : IDisposable
 {
   private readonly List<string> _tempDirs = new();
