@@ -1,6 +1,3 @@
-using VerifyXunit;
-using VerifyTests;
-
 namespace Everlong.Globalization.Tools.Tests;
 
 public class CodeGeneratorTests
@@ -254,6 +251,51 @@ public class CodeGeneratorTests
       "MyApp.Properties", "en", [module], SingleLocale("en", nodes),
       generateXmlDoc: true);
     return Verifier.Verify(result, Settings());
+  }
+
+  /// <summary>
+  ///   C# ends a string literal at the Unicode line and paragraph separators too, and
+  ///   <c>char.IsControl</c> does not cover them (they are separators), so a raw one in a translation
+  ///   used to reach the generated file and stop it compiling.
+  /// </summary>
+  [Theory]
+  [InlineData("\u2028")]
+  [InlineData("\u2029")]
+  public void Generate_UnicodeLineSeparatorInValue_IsEscaped(string separator)
+  {
+    var nodes = new List<LangNode>
+    {
+      new("Title", $"a{separator}b", [], [])
+    };
+    var module = FlatModule(nodes);
+    var result = new CodeGenerator().Generate("MyApp.Lang", "en", [module], SingleLocale("en", nodes));
+
+    Assert.Contains($"\\u{(int)separator[0]:x4}", result);
+    Assert.DoesNotContain(separator, result);
+  }
+
+  /// <summary>
+  ///   The same separators end a <c>///</c> comment line, which would leave the rest of the summary as
+  ///   code in the middle of the generated class, so the doc text carries them as character
+  ///   references.
+  /// </summary>
+  [Theory]
+  [InlineData("\u0085", "&#133;")]
+  [InlineData("\u2028", "&#8232;")]
+  [InlineData("\u2029", "&#8233;")]
+  public void GenerateXmlDoc_SeparatorInTheDocText_BecomesACharacterReference(string separator, string reference)
+  {
+    var nodes = new List<LangNode>
+    {
+      new("Title", $"a{separator}b", [], [])
+    };
+    var module = FlatModule(nodes);
+    var result = new CodeGenerator().Generate(
+      "MyApp.Properties", "en", [module], SingleLocale("en", nodes),
+      generateXmlDoc: true);
+
+    Assert.Contains(reference, result);
+    Assert.DoesNotContain(separator, result);
   }
 
   [Fact]

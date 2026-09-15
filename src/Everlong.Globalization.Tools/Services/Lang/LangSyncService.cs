@@ -6,12 +6,6 @@ namespace Everlong.Globalization.Tools.Services.Lang;
 
 public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
 {
-  private static readonly JsonDocumentOptions JsoncOptions = new()
-  {
-    CommentHandling = JsonCommentHandling.Skip,
-    AllowTrailingCommas = true
-  };
-
   private static readonly JsonSerializerOptions WriteOptions = new()
   {
     WriteIndented = true,
@@ -53,25 +47,28 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
   private async Task SyncFileAsync(string locale, string defaultFile, string targetDir, string lineEnding, CancellationToken ct)
   {
     var defaultContent = await File.ReadAllTextAsync(defaultFile, ct);
-    if (reader.ReadWithMeta(defaultContent).DataOnly)
+    if (LocaleFile.IsDataOnly(defaultFile, defaultContent, reader))
       return;
 
     var fileName = Path.GetFileName(defaultFile)!;
     var targetFile = FindMatchingFile(targetDir, fileName)
                      ?? Path.Combine(targetDir, EnsureJsonExtension(fileName));
 
-    JsonObject? targetJson = null;
+    JsonObject targetJson;
     string? existingContent = null;
     if (File.Exists(targetFile))
     {
       existingContent = await File.ReadAllTextAsync(targetFile, ct);
-      if (reader.ReadWithMeta(existingContent).DataOnly)
+      if (LocaleFile.IsDataOnly(targetFile, existingContent, reader))
         return;
-      targetJson = JsonNode.Parse(existingContent, null, JsoncOptions) as JsonObject;
+      targetJson = LocaleFile.ParseObject(existingContent, targetFile);
     }
-    targetJson ??= new JsonObject();
+    else
+    {
+      targetJson = new JsonObject();
+    }
 
-    var defaultJson = JsonNode.Parse(defaultContent, null, JsoncOptions) as JsonObject ?? new JsonObject();
+    var defaultJson = LocaleFile.ParseObject(defaultContent, defaultFile);
     var originalNormalized = targetJson.ToJsonString(WriteOptions);
     var (rebuilt, addedCount) = ReconstructInOrder(defaultJson, targetJson);
     var rebuiltNormalized = rebuilt.ToJsonString(WriteOptions);
@@ -87,7 +84,9 @@ public class LangSyncService(CsprojLocator locator, JsonLangReader reader)
 
     await File.WriteAllTextAsync(targetFile, desired, ct);
 
-    if (addedCount > 0)
+    if (existingContent is null)
+      Console.WriteLine($"  {locale}/{fileName}: created ({addedCount} key(s))");
+    else if (addedCount > 0)
       Console.WriteLine($"  {locale}/{fileName}: {addedCount} key(s) added");
     else if (keysChanged)
       Console.WriteLine($"  {locale}/{fileName}: re-ordered");

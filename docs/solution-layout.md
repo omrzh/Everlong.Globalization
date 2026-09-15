@@ -57,7 +57,9 @@ the internals below.
 The `i18n.jsonc` surface is one table — `Services/Lang/Models/LangOptions.cs` (group, key, JSON kind,
 allowed values, default, doc comment). `LangConfigFileReader` validates a config against it,
 `LangConfigTemplate` renders `init`'s scaffold from it, `LineEndings` resolves its one value token, and
-`LangOptionsTests` compares the docs' key sets to it.
+`LangOptionsTests` compares the docs' key sets to it. `LocaleFile` reads a catalog so a syntax error
+names the file, and `LangExceptions` carries the failures that are reported as one message rather than a
+stack trace.
 
 ---
 

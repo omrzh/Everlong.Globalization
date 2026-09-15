@@ -13,20 +13,35 @@ internal static class LineEndings
   /// <summary>The explicit opt-in of the convention of the running OS.</summary>
   public const string Platform = "platform";
 
+  /// <summary>The ending a repository that is normalized on Windows declares.</summary>
+  public const string Crlf = "crlf";
+
+  /// <summary>
+  ///   The breaks <see cref="string.ReplaceLineEndings(string)" /> recognizes, which is therefore the
+  ///   set <see cref="Apply" /> rewrites and the set <see cref="Uses" /> has to look for.  Vertical tab
+  ///   (U+000B) is deliberately absent: the framework leaves it alone, so a file holding one still uses
+  ///   the configured ending.
+  /// </summary>
+  private static readonly char[] Breaks = ['\r', '\n', '\f', '\u0085', '\u2028', '\u2029'];
+
   /// <summary>
   ///   Maps an option already normalized by <see cref="LangConfigFileReader" /> to the sequence to write.
+  ///   An unknown token is a programming error — the reader rejects one long before this point — so it
+  ///   fails loudly instead of quietly writing the platform's convention.
   /// </summary>
   public static string Resolve(string option) => option switch
   {
     Lf => "\n",
-    "crlf" => "\r\n",
-    _ => Environment.NewLine
+    Crlf => "\r\n",
+    Platform => Environment.NewLine,
+    _ => throw new ArgumentOutOfRangeException(
+      nameof(option), option, $"output.lineEnding must be \"{Lf}\", \"{Crlf}\" or \"{Platform}\".")
   };
 
   /// <summary>
-  ///   Rewrites every line break in <paramref name="content" /> to the configured one. Values that
-  ///   carry a line break of their own are escaped as literals by the generator, so this only reaches
-  ///   the breaks the writer emitted.
+  ///   Rewrites every line break in <paramref name="content" /> to the configured one.  Values that
+  ///   carry a line break of their own are escaped as literals by the generator and by the JSON
+  ///   writer, so this only reaches the breaks the writer emitted.
   /// </summary>
   public static string Apply(string content, string option) => content.ReplaceLineEndings(Resolve(option));
 
@@ -36,8 +51,5 @@ internal static class LineEndings
   ///   sync but whose bytes are not.
   /// </summary>
   public static bool Uses(string content, string option)
-  {
-    var remainder = content.Replace(Resolve(option), "");
-    return !remainder.Contains('\r') && !remainder.Contains('\n');
-  }
+    => content.Replace(Resolve(option), "").IndexOfAny(Breaks) < 0;
 }

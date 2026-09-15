@@ -27,6 +27,21 @@ What changed per release, newest first.
 - `init`'s scaffold carries every option: it now includes the `coordinator` group (it omitted two keys
   the reader accepted), and it writes `locale.sourceDir` with a forward slash so the same config
   resolves on every OS.
+- `add` writes the copied files with the configured line endings. It used to copy the default locale's
+  bytes, so a new locale could land inconsistent with `output.lineEnding` — and with `"lf"` as the
+  default, that is now the common case rather than a coincidence of which machine authored the source.
+
+### Fixed
+
+- A translation containing U+2028 or U+2029 produced generated C# that does not compile. C# counts the
+  Unicode line and paragraph separators among its line terminators, and the generator escaped only the
+  control characters; a raw one reached the string literal and stopped the consumer's build. They are
+  escaped as `\u2028` / `\u2029` now, and as `&#8232;` / `&#8233;` — plus `&#133;` for NEL — inside the
+  XML doc comments, where a raw separator would have ended the comment line.
+- A locale file the tool cannot read is reported with its path: `Invalid locale file '<path>': …` and
+  exit code 1, instead of a JSON parser message that knows a line and a byte offset but not which
+  catalog it came from. A catalog whose root is not a JSON object is rejected rather than read as
+  empty, which is how `sync` would have overwritten the translations still in the file.
 
 ## 0.2.0 — 2026-09-15
 

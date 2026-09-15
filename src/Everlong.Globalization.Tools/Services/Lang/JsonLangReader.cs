@@ -16,6 +16,7 @@ public class JsonLangReader
   public IReadOnlyList<LangNode> Read(string json)
   {
     using var doc = JsonDocument.Parse(json, JsoncOptions);
+    ValidateRoot(doc.RootElement);
     return ParseObject(doc.RootElement);
   }
 
@@ -29,6 +30,7 @@ public class JsonLangReader
   {
     using var doc = JsonDocument.Parse(json, JsoncOptions);
     var root = doc.RootElement;
+    ValidateRoot(root);
 
     string? keyPrefix = null;
     var dataOnly = false;
@@ -47,6 +49,16 @@ public class JsonLangReader
 
     var nodes = ParseObjectWithComments(root, comments, []);
     return new LangFileData(nodes, keyPrefix, dataOnly);
+  }
+
+  /// <summary>
+  ///   A catalog is an object of keys: anything else is a mistake the caller has to report against a
+  ///   file, which is why this is a <see cref="JsonException"/> the reader's callers wrap.
+  /// </summary>
+  private static void ValidateRoot(JsonElement root)
+  {
+    if (root.ValueKind != JsonValueKind.Object)
+      throw new JsonException("The root of a locale file must be a JSON object.");
   }
 
   /// <summary>

@@ -549,6 +549,14 @@ public class CodeGenerator
         case '\v':
           sb.Append("\\v");
           break;
+        // C# counts the Unicode line and paragraph separators among its line terminators, and
+        // char.IsControl does not cover them (they are separators, not control characters).
+        case '\u2028':
+          sb.Append("\\u2028");
+          break;
+        case '\u2029':
+          sb.Append("\\u2029");
+          break;
         default:
           if (char.IsControl(ch))
             sb.Append($"\\u{(int)ch:x4}");
@@ -561,6 +569,11 @@ public class CodeGenerator
     return sb.ToString();
   }
 
+  /// <summary>
+  ///   Escapes the text of a <c>///</c> comment.  The compiler ends a comment line at CR, LF, NEL, LS
+  ///   or PS, so any of those left raw would spill the rest of the summary into the generated file as
+  ///   code; each becomes a character reference instead.
+  /// </summary>
   private static string EscapeXmlDoc(string value)
     => value
       .Replace("\r\n", "\n")
@@ -568,5 +581,8 @@ public class CodeGenerator
       .Replace("&", "&amp;")
       .Replace("<", "&lt;")
       .Replace(">", "&gt;")
-      .Replace("\n", "&#10;");
+      .Replace("\n", "&#10;")
+      .Replace("\u0085", "&#133;")
+      .Replace("\u2028", "&#8232;")
+      .Replace("\u2029", "&#8233;");
 }

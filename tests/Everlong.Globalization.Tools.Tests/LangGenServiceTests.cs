@@ -350,6 +350,25 @@ public class LangGenServiceTests : IDisposable
   }
 
   [Fact]
+  public async Task MalformedLocaleFile_NamesTheFile()
+  {
+    var dir = CreateTempDir();
+    var localeDir = Path.Combine(dir, "i18n", "en");
+    Directory.CreateDirectory(localeDir);
+    var broken = Path.Combine(localeDir, "app.json");
+    File.WriteAllText(broken, """{ "Title": "My App"""); // the closing brace went missing
+
+    var csproj = WriteCsproj(dir, "i18n", "Generated", "MyApp.Lang");
+    var service = new LangGenService(new CsprojLocator(), new JsonLangReader(), new CodeGenerator());
+
+    var ex = await Assert.ThrowsAsync<InvalidLocaleFileException>(
+      () => service.RunAsync(csproj, TestContext.Current.CancellationToken));
+
+    Assert.Contains("app.json", ex.Message);
+    Assert.Contains(localeDir, ex.Message);
+  }
+
+  [Fact]
   public async Task LineEnding_Lf_WritesLfOnly()
   {
     var dir = CreateTempDir();

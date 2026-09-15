@@ -61,8 +61,10 @@ public class LangAddService(CsprojLocator locator)
                .Concat(Directory.GetFiles(sourceFolder, "*.jsonc")))
     {
       var targetFile = Path.Combine(targetFolder, Path.GetFileName(sourceFile));
+      // The copy is a file the tool owns from its first byte, so it gets the configured ending rather
+      // than whatever the file it was copied from happened to carry.
       var content = await File.ReadAllTextAsync(sourceFile, ct);
-      await File.WriteAllTextAsync(targetFile, content, ct);
+      await File.WriteAllTextAsync(targetFile, LineEndings.Apply(content, config.LineEnding), ct);
       Console.WriteLine($"Created: {targetFile}");
     }
   }

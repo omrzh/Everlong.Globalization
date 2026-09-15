@@ -29,7 +29,7 @@ try
     .Build()
     .InvokeAsync(args);
 }
-catch (Exception ex) when (ex is InvalidLangConfigException or NoCsprojFoundException or MissingLangConfigException)
+catch (Exception ex) when (ex is InvalidLangConfigException or InvalidLocaleFileException or NoCsprojFoundException or MissingLangConfigException)
 {
   Console.Error.WriteLine(ex.Message);
   return 1;

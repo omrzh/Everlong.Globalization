@@ -185,7 +185,8 @@ Reads all JSON/JSONC files under each locale subdirectory, merges them into per-
 dotnet elg add <locale> [--project <csproj>] [--force]
 ```
 
-Copies all JSON files from the default locale into a new locale folder. Use `--force` to overwrite an existing folder.
+Copies all JSON files from the default locale into a new locale folder. The copy gets the configured
+line endings. Use `--force` to overwrite an existing folder.
 
 ### `check`
 

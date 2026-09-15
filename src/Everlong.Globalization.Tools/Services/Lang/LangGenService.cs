@@ -146,7 +146,7 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
     foreach (var moduleFile in moduleFiles)
     {
       var moduleName = ToModuleName(Path.GetFileNameWithoutExtension(moduleFile)!);
-      var neutralFileData = reader.ReadWithMeta(File.ReadAllText(moduleFile), config.GenerateXmlDoc);
+      var neutralFileData = LocaleFile.Parse(moduleFile, File.ReadAllText(moduleFile), reader, config.GenerateXmlDoc);
 
       var keyPrefix = neutralFileData.KeyPrefix ?? moduleName;
       var defaultNodes = neutralFileData.Nodes;
@@ -169,7 +169,7 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
           .FirstOrDefault(File.Exists);
         if (localeFile is not null)
         {
-          var localeFileData = reader.ReadWithMeta(File.ReadAllText(localeFile));
+          var localeFileData = LocaleFile.Parse(localeFile, File.ReadAllText(localeFile), reader);
           var localeKeyPrefix = neutralFileData.KeyPrefix ?? moduleName;
           var localeFlat = PrefixKeys(JsonLangReader.Flatten(localeFileData.Nodes), localeKeyPrefix);
           allFlatValues[locale] = localeFlat;
@@ -203,7 +203,7 @@ public class LangGenService(CsprojLocator locator, JsonLangReader reader, CodeGe
         if (neutralBaseNames.Contains(Path.GetFileNameWithoutExtension(extraFile)!))
           continue;
 
-        var extraFileData = reader.ReadWithMeta(File.ReadAllText(extraFile));
+        var extraFileData = LocaleFile.Parse(extraFile, File.ReadAllText(extraFile), reader);
         var extraModuleName = ToModuleName(Path.GetFileNameWithoutExtension(extraFile)!);
         var extraKeyPrefix = extraFileData.KeyPrefix ?? extraModuleName;
 

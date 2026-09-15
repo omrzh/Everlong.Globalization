@@ -201,8 +201,3 @@ public class CsprojLocator
     }
   }
 }
-
-public class NoCsprojFoundException(string message) : Exception(message);
-public class MissingLangConfigException(string csprojPath, string property)
-  : Exception($"Property <{property}> not found in {csprojPath}. Add it to a <PropertyGroup>");
-public class InvalidLangConfigException(string message) : Exception(message);

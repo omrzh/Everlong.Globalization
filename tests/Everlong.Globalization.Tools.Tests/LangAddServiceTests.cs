@@ -12,7 +12,7 @@ public class LangAddServiceTests : IDisposable
     return path;
   }
 
-  private static string WriteCsproj(string dir, string sourceDir, string defaultLocale = "en")
+  private static string WriteCsproj(string dir, string sourceDir, string defaultLocale = "en", string? lineEnding = null)
   {
     var i18nJsonRelPath = Path.Combine(sourceDir, "i18n.json");
     var path = Path.Combine(dir, "Test.csproj");
@@ -25,10 +25,11 @@ public class LangAddServiceTests : IDisposable
       """);
     var absSourceDir = Path.GetFullPath(Path.Combine(dir, sourceDir));
     Directory.CreateDirectory(absSourceDir);
+    var lineEndingOption = lineEnding is null ? "" : $", \"lineEnding\": \"{lineEnding}\"";
     File.WriteAllText(Path.Combine(absSourceDir, "i18n.json"), $$"""
       {
         "locale": { "default": "{{defaultLocale}}" },
-        "output": { "dir": "Generated", "namespace": "MyApp.Lang" },
+        "output": { "dir": "Generated", "namespace": "MyApp.Lang"{{lineEndingOption}} },
         "types": { "classVisibility": "public" },
         "codegen": { "xmlDoc": false }
       }
@@ -92,6 +93,33 @@ public class LangAddServiceTests : IDisposable
 
     await Assert.ThrowsAsync<InvalidOperationException>(
       () => service.RunAsync("fr", csproj, force: false, ct: TestContext.Current.CancellationToken));
+  }
+
+  /// <summary>
+  ///   A copy is a file the tool owns from its first byte, so it follows the option rather than
+  ///   inheriting whatever ending the file it was copied from happened to carry.
+  /// </summary>
+  [Theory]
+  [InlineData(null, "\n")] // the default
+  [InlineData("lf", "\n")]
+  [InlineData("crlf", "\r\n")]
+  public async Task FolderMode_CopiesWithTheConfiguredEnding(string? lineEnding, string expected)
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    Directory.CreateDirectory(enDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), "{\r\n  \"Title\": \"App\"\r\n}");
+
+    var csproj = WriteCsproj(dir, "i18n", lineEnding: lineEnding);
+    var service = new LangAddService(new CsprojLocator());
+
+    await service.RunAsync("fr", csproj, force: false, ct: TestContext.Current.CancellationToken);
+
+    var copy = await File.ReadAllTextAsync(
+      Path.Combine(sourceDir, "fr", "app.json"), TestContext.Current.CancellationToken);
+    Assert.Contains("App", copy);
+    LineEndingAssertions.AssertOnly(copy, expected);
   }
 
   [Fact]

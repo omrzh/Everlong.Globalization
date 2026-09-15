@@ -128,11 +128,12 @@ This tells the generator which `using` directive to emit. The default is `"Everl
 }
 ```
 
-Every file `gen` writes and every locale file `sync` rewrites goes through this option. The default is
-`"lf"` — the ending most repositories declare in `.editorconfig` — so a regeneration is byte-identical
-on every platform and `git status` stays clean without configuring anything. `"crlf"` covers a
-repository that declares CRLF, and `"platform"` is the explicit opt-in of the running OS's convention
-(Windows CRLF, Linux and macOS LF); neither is what an unset field means.
+Every file `gen` writes and every locale file `sync` rewrites goes through this option, as does the
+copy `add` puts in a new locale folder — that copy follows the option rather than the endings of the
+file it came from. The default is `"lf"` — the ending most repositories declare in `.editorconfig` — so
+a regeneration is byte-identical on every platform and `git status` stays clean without configuring
+anything. `"crlf"` covers a repository that declares CRLF, and `"platform"` is the explicit opt-in of
+the running OS's convention (Windows CRLF, Linux and macOS LF); neither is what an unset field means.
 
 The tool never reads `.editorconfig` or `.gitattributes`. Resolving `end_of_line` means walking up to
 `root = true` through section globs (`[*]`, `[*.cs]`, `[{*.cs,*.json}]`) with later-section precedence,
@@ -159,7 +160,9 @@ repository wants is "update the tool", not bytes another machine would not produ
 `add` and `sync` all read the config the same way, so the strictness applies to every command.
 
 Locale files keep the opposite contract: inside `Properties/i18n/<locale>/*.json` any key is a string
-entry — that is content, not configuration.
+entry — that is content, not configuration. What they are strict about is being readable at all: a
+catalog whose JSON is malformed, or whose root is not an object, stops the command with
+`Invalid locale file '<path>': …` rather than a parser offset that does not say which file it came from.
 
 ---
 

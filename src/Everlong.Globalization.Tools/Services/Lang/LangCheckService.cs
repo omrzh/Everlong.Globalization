@@ -74,7 +74,7 @@ public class LangCheckService(CsprojLocator locator, JsonLangReader reader)
                .Concat(Directory.GetFiles(folder, "*.jsonc"))
                .OrderBy(x => x))
     {
-      var meta = reader.ReadWithMeta(File.ReadAllText(f));
+      var meta = LocaleFile.Parse(f, File.ReadAllText(f), reader);
       if (meta.DataOnly)
         continue;
       merged.AddRange(meta.Nodes);

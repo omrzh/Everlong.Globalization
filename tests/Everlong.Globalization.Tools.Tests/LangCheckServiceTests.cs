@@ -36,6 +36,33 @@ public class LangCheckServiceTests : IDisposable
     return path;
   }
 
+  /// <summary>
+  ///   A locale catalog the parser cannot read is a hand-edited typo, and the message has to say which
+  ///   file it was in — a line and a byte offset are useless when a project has dozens of them.
+  /// </summary>
+  [Fact]
+  public async Task MalformedLocaleFile_NamesTheFile()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var frDir = Path.Combine(sourceDir, "fr");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(frDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+    var broken = Path.Combine(frDir, "app.json");
+    File.WriteAllText(broken, """{ "Hello": "Bonjour"""); // an edit that lost the closing brace
+
+    var csproj = WriteCsproj(dir, "i18n");
+    var service = new LangCheckService(new CsprojLocator(), new JsonLangReader());
+
+    var ex = await Assert.ThrowsAsync<InvalidLocaleFileException>(
+      () => service.RunAsync(csproj, TestContext.Current.CancellationToken));
+
+    Assert.Contains("app.json", ex.Message);
+    Assert.Contains(frDir, ex.Message);
+  }
+
   [Fact]
   public async Task AllConsistent_Returns_OkResults()
   {

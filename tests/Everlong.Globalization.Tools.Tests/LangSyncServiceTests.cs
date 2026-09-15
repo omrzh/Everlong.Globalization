@@ -168,6 +168,89 @@ public class LangSyncServiceTests : IDisposable
     Assert.Equal("App", doc.RootElement.GetProperty("Title").GetString());
   }
 
+  /// <summary>
+  ///   A file the tool creates is announced as created.  The empty-source corner is why: with nothing
+  ///   to add and nothing to re-order, the old wording called a newly written file a normalization.
+  /// </summary>
+  [Fact]
+  public async Task MissingTargetFile_IsAnnouncedAsCreated()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var zhDir = Path.Combine(sourceDir, "zh-CN");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(zhDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), "{}");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    using var writer = new StringWriter();
+    var oldOut = Console.Out;
+    Console.SetOut(writer);
+    try
+    {
+      await new LangSyncService(new CsprojLocator(), new JsonLangReader()).RunAsync(null, csproj, TestContext.Current.CancellationToken);
+    }
+    finally
+    {
+      Console.SetOut(oldOut);
+    }
+
+    var output = writer.ToString();
+    Assert.Contains("created", output);
+    Assert.DoesNotContain("normalized", output);
+    Assert.True(File.Exists(Path.Combine(zhDir, "app.json")));
+  }
+
+  /// <summary>
+  ///   A target locale file whose root is not an object is a broken catalog, not an empty one.  Reading
+  ///   it as empty is how <c>sync</c> would quietly overwrite whatever the file still holds.
+  /// </summary>
+  [Fact]
+  public async Task TargetFileWithoutAnObjectRoot_IsRejected_NotOverwritten()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var frDir = Path.Combine(sourceDir, "fr");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(frDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+    var target = Path.Combine(frDir, "app.json");
+    File.WriteAllText(target, "5");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    var service = new LangSyncService(new CsprojLocator(), new JsonLangReader());
+
+    var ex = await Assert.ThrowsAsync<InvalidLocaleFileException>(
+      () => service.RunAsync(null, csproj, TestContext.Current.CancellationToken));
+
+    Assert.Contains("app.json", ex.Message);
+    Assert.Equal("5", await File.ReadAllTextAsync(target, TestContext.Current.CancellationToken));
+  }
+
+  [Fact]
+  public async Task MalformedTargetFile_NamesTheFile()
+  {
+    var dir = CreateTempDir();
+    var sourceDir = Path.Combine(dir, "i18n");
+    var enDir = Path.Combine(sourceDir, "en");
+    var frDir = Path.Combine(sourceDir, "fr");
+    Directory.CreateDirectory(enDir);
+    Directory.CreateDirectory(frDir);
+    File.WriteAllText(Path.Combine(enDir, "app.json"), """{ "Hello": "Hello" }""");
+    File.WriteAllText(Path.Combine(frDir, "app.json"), """{ "Hello": "Bonjour""");
+
+    var csproj = WriteCsproj(dir, "i18n");
+    var service = new LangSyncService(new CsprojLocator(), new JsonLangReader());
+
+    var ex = await Assert.ThrowsAsync<InvalidLocaleFileException>(
+      () => service.RunAsync(null, csproj, TestContext.Current.CancellationToken));
+
+    Assert.Contains("app.json", ex.Message);
+    Assert.Contains(frDir, ex.Message);
+  }
+
   [Fact]
   public async Task DataOnly_TargetFiles_AreLeftUntouched()
   {
